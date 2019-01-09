@@ -16,11 +16,40 @@ using namespace std;
 using Assignment=
   vector<int>;
   
-/// Prints an assignment
-ostream& operator<<(ostream& os,const Assignment& a);
+/// Prints an assignent
+template <typename T>
+ostream& operator<<(ostream& os,const vector<T>& a)
+{
+  // Open the bracket
+  os<<"(";
+  
+  // Header
+  bool h=
+    true;
+  
+  for(auto& i : a)
+    {
+      if(h)
+	h=false;
+      else
+	os<<",";
+      
+      os<<i;
+    }
+  
+  os<<")";
+  
+  return os;
+}
 
 /// Draws an Assignment
 void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint);
+
+/// Return the index of row, col in the upper triangular part of a marix of size n
+inline int triId(const int row,const int col,const int n)
+{
+  return n*row-(row+1)*row/2+col-(row+1);
+}
 
 /// Assignment of the lines
 class AssignmentsFinder
@@ -38,12 +67,6 @@ class AssignmentsFinder
   
 public:
   
-  /// Return the index of the assignment
-  int dId(const int row,const int col) const
-  {
-    return nN*row-(row+1)*row/2+col-(row+1);
-  }
-  
   AssignmentsFinder(const vector<int>& N) : N(N) {}
   
   /// Iteratively loop on all row and col, producing all possible assignments
@@ -51,7 +74,7 @@ public:
   {
     /// Gets the index of assignement
     const int i=
-      dId(row,col);
+      triId(row,col,nN);
     
     // If we are not looping on the last element
     if(i<nD)

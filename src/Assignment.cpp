@@ -1,35 +1,10 @@
 #include "Assignment.hpp"
 
-ostream& operator<<(ostream& os,const Assignment& a)
-{
-  // Open the bracket
-  os<<"(";
-  
-  // Header
-  bool h=
-    true;
-  
-  for(auto& i : a)
-    {
-      if(h)
-	h=false;
-      else
-	os<<",";
-      
-      os<<i;
-    }
-  
-  os<<")";
-  
-  return os;
-}
-
 void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint)
 {
   /// Gets back N
   const int N=
     nPoint.size();
-  // (1+sqrt(1+8*a.size()))/2;
   
   // Header
   os<<"\\documentclass{standalone}"<<endl;
