@@ -10,38 +10,14 @@
 #include <numeric>
 #include <vector>
 
+#include <Tools.hpp>
+
 using namespace std;
 
 /// Assignement is a vector of int
 using Assignment=
   vector<int>;
   
-/// Prints an assignent
-template <typename T>
-ostream& operator<<(ostream& os,const vector<T>& a)
-{
-  // Open the bracket
-  os<<"(";
-  
-  // Header
-  bool h=
-    true;
-  
-  for(auto& i : a)
-    {
-      if(h)
-	h=false;
-      else
-	os<<",";
-      
-      os<<i;
-    }
-  
-  os<<")";
-  
-  return os;
-}
-
 /// Draws an Assignment
 void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint);
 

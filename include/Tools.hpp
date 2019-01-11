@@ -2,6 +2,8 @@
 #define _TOOLS_HPP
 
 #include <functional>
+#include <iostream>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -11,21 +13,6 @@ template <typename T>
 T sqr(const T& t)
 {
   return t*t;
-}
-
-/// Factorial
-template <typename T>
-T factorial(const T& n)
-{
-  /// Result
-  T res=
-    1;
-  
-  for(T i=2;i<=n;i++)
-    res*=
-      i;
-  
-  return res;
 }
 
 /// Transforms a vector using a function f
@@ -88,11 +75,12 @@ T summatorial(const vector<T>& in)
 }
 
 /// Decompose a number in its digit following a multi-basis
-template <typename T>
-vector<T> decomposeNumber(T num,const vector<T>& basis)
+template <typename Tin,
+	  typename Tout>
+vector<Tout> decomposeNumber(Tin num,const vector<Tout>& basis)
 {
   /// Result
-  vector<T> out(basis.size());
+  vector<Tout> out(basis.size());
   
   for(int i=basis.size()-1;i>=0;i--)
     {
@@ -108,53 +96,54 @@ vector<T> decomposeNumber(T num,const vector<T>& basis)
 
 
 /// Decompose a number in its digit following a fixed basis n
-template <typename T>
-vector<T> decomposeNumber(T num,const int nDigits,const int base)
+template <typename Tin,
+	  typename Tout>
+vector<Tout> decomposeNumber(Tin num,const int nDigits,const Tout base)
 {
-  return decomposeNumber(num, fillVector<T>(nDigits,[base](const int i){return base;}));
+  return decomposeNumber(num,fillVector<Tout>(nDigits,[base](const Tout i){return base;}));
 }
 
-/// Takes a permutation id and returns its assigned choice
+/// Prints a pair
+template <typename T1,
+	  typename T2>
+ostream& operator<<(ostream& os,const pair<T1,T2>& a);
+
+/// Prints a vector
 template <typename T>
-vector<int> decryptPermutation(const int n,T in)
+ostream& operator<<(ostream& os,const vector<T>& a);
+
+template <typename T1,
+	  typename T2>
+ostream& operator<<(ostream& os,const pair<T1,T2>& a)
 {
-  /// Returned permutation element
-  vector<int> out(n,-1);
+  os<<"{"<<a.first<<","<<a.second<<"}";
   
-  /// Mask to determine the digit in the permutation
-  int mask=
-    n;
+  return os;
+}
+
+template <typename T>
+ostream& operator<<(ostream& os,const vector<T>& a)
+{
+  // Open the bracket
+  os<<"(";
   
-  for(int i=0;i<n;i++)
+  // Header
+  bool h=
+    true;
+  
+  for(auto& i : a)
     {
-      // Choice of the i-th element
-      int c=
-	in%mask;
+      if(h)
+	h=false;
+      else
+	os<<",";
       
-      /// Poisition is initially 0
-      int p=
-	0;
-      
-      // Find the c-th non null and not used
-      while(c!=0 or out[p]>=0)
-	{
-	  // If current is free, decrease number to move for the choice
-	  if(out[p]<0)
-	    c--;
-	  
-	  // Increment target position
-	  p++;
-	}
-      
-      // Mark down
-      out[p]=i;
-      
-      in/=mask;
-      
-      mask--;
+      os<<i;
     }
   
-  return out;
+  os<<")";
+  
+  return os;
 }
 
 #endif
