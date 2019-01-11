@@ -11,3 +11,6 @@ build*
 /config/install-sh
 /config/missing
 /configure
+GTAGS
+/GPATH
+/GRTAGS

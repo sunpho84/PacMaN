@@ -103,26 +103,18 @@ vector<Tout> decomposeNumber(Tin num,const int nDigits,const Tout base)
   return decomposeNumber(num,fillVector<Tout>(nDigits,[base](const Tout i){return base;}));
 }
 
-/// Prints a pair
-template <typename T1,
-	  typename T2>
-ostream& operator<<(ostream& os,const pair<T1,T2>& a);
+/// Prints an array
+template <typename T,
+	  uint64_t N>
+ostream& operator<<(ostream& os,const array<T,N>& a);
 
 /// Prints a vector
 template <typename T>
 ostream& operator<<(ostream& os,const vector<T>& a);
 
-template <typename T1,
-	  typename T2>
-ostream& operator<<(ostream& os,const pair<T1,T2>& a)
-{
-  os<<"{"<<a.first<<","<<a.second<<"}";
-  
-  return os;
-}
-
+/// Prints using automatic range
 template <typename T>
-ostream& operator<<(ostream& os,const vector<T>& a)
+ostream& rangePrint(ostream& os,const T& a)
 {
   // Open the bracket
   os<<"(";
@@ -143,7 +135,25 @@ ostream& operator<<(ostream& os,const vector<T>& a)
   
   os<<")";
   
-  return os;
+  return
+    os;
+}
+
+/// Prints an array
+template <typename T,
+	  uint64_t N>
+ostream& operator<<(ostream& os,const array<T,N>& a)
+{
+  return
+    rangePrint(os,a);
+}
+
+/// Prints a vector
+template <typename T>
+ostream& operator<<(ostream& os,const vector<T>& a)
+{
+  return
+    rangePrint(os,a);
 }
 
 #endif
