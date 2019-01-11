@@ -151,8 +151,6 @@ T nextCombination(const T& extX)
     static_cast<T>(v+(((v^x)/u)>>2));
 }
 
-#include <iostream>
-
 /// Loops on all combinations of nSlots
 template <typename F,
 	  typename T=int64_t>
