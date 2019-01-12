@@ -39,7 +39,7 @@ class WicksFinder
   const int64_t nLegsPermAllPoints;
   
   /// Number of free legs in the head and in the tail when assigning the (i,j) assignment
-  const vector<pair<int,int>> nFreeLegsWhenAssigning;
+  const vector<array<int,2>> nFreeLegsWhenAssigning;
   
   /// Total number of permutations of all propagator assignment
   const int64_t nPermAllAss;
@@ -53,10 +53,10 @@ class WicksFinder
   ///
   /// The number of free legs in the tail is given by
   /// nLegsPerPoint[col]-\sum_{k=0}^{row-1} ass[k,col]
-  vector<pair<int,int>> getNFreeLegsWhenAssigning() const
+  vector<array<int,2>> getNFreeLegsWhenAssigning() const
   {
     /// Returned list
-    vector<pair<int,int>> out(ass.size());
+    vector<array<int,2>> out(ass.size());
     
     /// Association considered
     int iAss=
@@ -108,87 +108,50 @@ public:
       nLegsPermAllPoints/nPermAllAss;
   }
   
-  /// Loops on all Wick contractions, executing the function on it
-  void forAllWicks(int64_t iWick) const
+  /// Gets the list of non-null associations
+  vector<NnAss> getNonNullAssociations() const
   {
+    /// Result
+    vector<NnAss> res;
     
+    /// Index of association
+    int iAss=
+      0;
     
-    // /// Result
-    // //vector<int64_t> res(nLegs);
+    for(int i=0;i<nPoints;i++)
+      for(int j=i+1;j<nPoints;j++)
+	{
+	  if(ass[iAss]!=0)
+	    res.push_back({{i,j},ass[iAss],nFreeLegsWhenAssigning[iAss]});
+	  
+	  iAss++;
+	}
     
-    // // Reincorporate the permutations of assignments
-    // // iWick*=
-    // //   nPermAllAss;
+    return
+      res;
+  }
+  
+  /// Loops on all Wick contractions, executing the function on it
+  template <typename F>
+  void forAllWicks(F f) const
+  {
+    /// Non-null associations
+    vector<NnAss> nnAss=
+      getNonNullAssociations();
     
-    // /// Index of the permutation for each point
-    // vector<int64_t> iPermLegsOfPoint=
-    //   decomposeNumber(iWick,nIndLegsPermPerPoint);
+    /// Tensor product of all assignemnt heads and tail case
+    vector<int64_t> caseAss(2*nnAss.size());
     
-    // vector<int64_t> p;
+    /// Last assignemnt before overflow
+    vector<int64_t> lastAss(2*nnAss.size());
     
-    // /// Index running on all legs
-    // int iLeg=
-    //   0;
-    
-    // // Loop on all points
-    // for(int iPoint=0;iPoint<nPoints;iPoint++)
-    //   {
-    // 	/// Index running on all legs of this point
-    // 	int iLegOfPoint=
-    // 	  0;
-	
-    // 	// Loop on all other points, to run on all associations
-    // 	for(int jPoint=0;jPoint<nPoints;jPoint++)
-    // 	  if(iPoint!=jPoint)
-    // 	    {
-    // 	      /// Gets the relevant association
-    // 	      const int iAss=
-    // 		(iPoint<jPoint)
-    // 		?
-    // 		triId(iPoint,jPoint,nPoints)
-    // 		:
-    // 		triId(jPoint,iPoint,nPoints);
-	      
-    // 	      /// Number of permutations for this side of the
-    // 	      /// association. This is equal to the number of
-    // 	      /// permutations of the association, or 1 if the lines
-    // 	      /// goes out
-    // 	      const int64_t nPermLegsOfAss=
-    // 		(jPoint>iPoint)
-    // 		?
-    // 		1
-    // 		:
-    // 		nPermPerAss[iAss];
-	      
-    // 	      // Loop on all legs of this association
-    // 	      for(int iLegOfAss=0;iLegOfAss<ass[iAss];iLeg++)
-    // 		{
-    // 		  /// Number of legs to be assigned
-    // 		  const int nLegsFree=
-    // 		    nLegsPerPoint[iPoint]-iLegOfPoint;
-    // 		}
-    // 	    }
-	
-    // //ora tocca decomporre le singole permutazioni nelle permutazioni delle sottoassegnazioni
-    // //questo si fa facendo il loop sulle assegnazioni
-    
-    // // for(int iPoint=0;iPoint<nPoints;iPoint++)
-    // //   {
-    // // 	cout<<nLegsPermPerPoint[iPoint]<<endl;
-	
-    // // 	/// Index of the permutation
-    // // 	int iPermOfPoint=
-    // // 	  iWick%nLegsPermPerPoint[iPoint];
-	
-    // // 	iWick/=nLegsPermPerPoint[iPoint];
-	
-    // // 	cout<<" iperm: "<<iPermOfPoint<<" , "<<decryptPermutation(nLegsPerPoint[iPoint],iPermOfPoint)<<endl;
-    // //   }
-    
-    // // return pointOfLeg;
-    
-    // // return res;
-    //   }
+    for(int iAss=0;iAss<nnAss.size();iAss++)
+      {
+    	caseAss[iAss*2+0]=
+	  
+      }
+
+    qua
   }
   
   WicksFinder(const vector<int>& nLegsPerPoint,const Assignment& ass) :
@@ -243,15 +206,17 @@ public:
 
 int main(int narg,char **arg)
 {
-  forAllCombinations(5, 6, [](int64_t i){cout<<i<<endl;});
-  
-  return 0;
-  
-  int nSlots=
+  constexpr int nSlots=
     4;
   
   int nObj=
     3;
+
+  forAllCombinations(nObj,nSlots,[&](const int64_t& t){cout<<bitRep<int64_t,nSlots>(t)<<endl;});
+  cout<<bitRep(lastCombination(3,5))<<endl;
+  
+  return 0;
+  
   
   int nDisp=
     nDispositions(nObj,nSlots);

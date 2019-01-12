@@ -10,6 +10,7 @@
 #include <numeric>
 #include <vector>
 
+#include <Combinatorial.hpp>
 #include <Tools.hpp>
 
 using namespace std;
@@ -17,7 +18,35 @@ using namespace std;
 /// Assignement is a vector of int
 using Assignment=
   vector<int>;
+
+/// Labels the wo components of a pair
+enum{FROM,TO};
+
+/// Non null assignment
+class NnAss
+{
+public:
   
+  /// Index of the points where the assignment start and ends
+  const array<int,2> iPoint;
+  
+  /// Number of lines
+  const int nLines;
+  
+  /// Number of legs free to assign in start and end
+  const array<int,2> nFreeLegsWhenAssigning;
+  
+  /// Number of possible assignements of he source and sink of the line
+  const array<int64_t,2> nPoss;
+  
+  NnAss(const array<int,2>& iPoint,const int& nLines,const array<int,2>& nFreeLegsWhenAssigning) :
+    iPoint(iPoint),nLines(nLines),nFreeLegsWhenAssigning(nFreeLegsWhenAssigning),
+    nPoss({nCombinations(nLines,nFreeLegsWhenAssigning[FROM]),nDispositions(nLines,nFreeLegsWhenAssigning[TO])})
+  {
+  };
+  
+};
+
 /// Draws an Assignment
 void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint);
 
