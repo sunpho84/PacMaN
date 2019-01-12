@@ -1,6 +1,7 @@
 #ifndef _TOOLS_HPP
 #define _TOOLS_HPP
 
+#include <bitset>
 #include <functional>
 #include <iostream>
 #include <utility>
@@ -154,6 +155,16 @@ ostream& operator<<(ostream& os,const vector<T>& a)
 {
   return
     rangePrint(os,a);
+}
+
+/// Cast to bitset
+template <typename T,
+	  int N=8*sizeof(T)>
+bitset<N> bitRep(const T& t)
+{
+  /// Bitset
+  return
+    *(reinterpret_cast<const bitset<N>*>(&t));
 }
 
 #endif

@@ -151,6 +151,23 @@ T nextCombination(const T& extX)
     static_cast<T>(v+(((v^x)/u)>>2));
 }
 
+/// First combination of nObj objects
+template <typename T=int64_t>
+T firstCombination(const int& nObj)
+{
+  return
+    (static_cast<T>(1)<<nObj)-1;
+}
+
+/// Last combination of nObj objects into nSlots slots
+template <typename T=int64_t>
+T lastCombination(const int& nObj,const int& nSlots)
+{
+  return
+    ((static_cast<T>(1)<<nSlots)-1)^
+    ((static_cast<T>(1)<<(nSlots-nObj))-1);
+}
+
 /// Loops on all combinations of nSlots
 template <typename F,
 	  typename T=int64_t>
@@ -160,11 +177,11 @@ void forAllCombinations(const int& nObj,const int& nSlots,F f)
     {
       /// Last combination
       T last=
-	(static_cast<T>(1)<<nSlots)-1;
+	lastCombination(nObj,nSlots);
       
       /// Running combo
       T combo=
-	(static_cast<T>(1)<<nObj)-1;
+	firstCombination(nObj);
       
       do
 	{
@@ -173,7 +190,7 @@ void forAllCombinations(const int& nObj,const int& nSlots,F f)
 	  combo=
 	    nextCombination(combo);
 	}
-      while(combo<last);
+      while(combo<=last);
     }
 }
 
