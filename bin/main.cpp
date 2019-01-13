@@ -139,6 +139,9 @@ public:
     vector<NnAss> nnAss=
       getNonNullAssociations();
     
+    /// Precomputed list of all possible associations
+    vector<vector<vector<int>>> possTable(2*nnAss.size());
+    
     /// Tensor product of all assignemnt heads and tail case
     vector<int64_t> curr(2*nnAss.size());
     
@@ -147,30 +150,41 @@ public:
     
     for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
       {
-	/// Type of functions using int the following
-	using F2=
-	  decltype(nCombinations<int64_t>);
-	
-	/// Function pointers to compute total numbers of from/to
-	constexpr array<F2*,2> firstPoss=
-	  {firstCombination,firstDisposition};
-	
-	/// Function pointers to compute last of from/to
-	constexpr array<F2*,2> lastPoss=
-	  {lastCombination,lastDisposition};
-	
 	/// Nonnull ass
 	const NnAss& a=
 	  nnAss[iNnAss];
 	
+	/// Index of the association
 	const int& iAss=
 	  a.iAss;
 	
-	// Loop on from/to to compute the first and last of all possibilities
-	for(int ft=0;ft<2;ft++)
-	  for(auto& currLast : array<tuple<vector<int64_t>&,array<F2*,2>>,2>{{{curr,firstPoss},{last,lastPoss}}})
-	    get<0>(currLast)[iNnAss*2+ft]=
-	      get<1>(currLast)[ft](a.nLines,nFreeLegsWhenAssigning[iAss][ft]);
+	/// Number of legs to assign
+	const int& nLegsToAss=
+	  a.nLines;
+	
+	/// Number of free legs when assignigning the head
+	const int& nFreeLegsFrom=
+	  nFreeLegsWhenAssigning[iAss][FROM];
+	
+	/// Last possible assignment on the head
+	int64_t lastPossFrom=
+	  lastCombination(nLegsToAss,nFreeLegsFrom);
+	
+	/// Store the starting side combination
+	for(int64_t possFrom=firstCombination(nLegsToAss,nFreeLegsFrom);possFrom<lastPossFrom;possFrom=nextCombination(possFrom))
+	  possTable[2*iNnAss+FROM].push_back(decryptCombination(nLegsToAss,nFreeLegsFrom,possFrom));
+	
+	/// Number of free legs when assigning the tail
+	const int& nFreeLegsTo=
+	  nFreeLegsWhenAssigning[iAss][TO];
+	
+	/// Last possible assignment on the tail
+	int64_t lastPossTo=
+	  lastDisposition(nLegsToAss,nFreeLegsTo);
+	
+	/// Store the ending side disposition
+	for(int64_t possTo=firstDisposition(nLegsToAss,nFreeLegsTo);possTo<lastPossTo;possTo=nextDisposition(possTo))
+	  possTable[2*iNnAss+TO].push_back(decryptDisposition(nLegsToAss,nFreeLegsTo,possTo));
       }
   }
   
