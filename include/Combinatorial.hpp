@@ -127,6 +127,14 @@ T firstDisposition(const int& nObj,const int& nSlots)
     0;
 }
 
+/// Returns the next disposition
+template <typename T>
+T nextDisposition(const T& x)
+{
+  return
+    x+1;
+}
+
 /// Returns the last dispositions of nObj objects into nSlots slots
 template <typename T=int64_t>
 T lastDisposition(const int& nObj,const int& nSlots)
@@ -141,6 +149,31 @@ T nCombinations(const int& nObj,const int& nSlots)
 {
   return
     newtonBinomial<T>(nSlots,nObj);
+}
+
+/// Takes the id combination of nObj numbers into nSlots slots, and returns its assigned choice
+template <typename T>
+vector<int> decryptCombination(const int& nObj,const int& nSlots,T iCombo)
+{
+  /// Result
+  vector<int> out(nObj);
+  
+  /// Index of object
+  int iObj=
+    0;
+  
+  /// Index of the slot
+  int iSlot=
+    0;
+  
+  while(iObj<nObj and iSlot<nSlots)
+    {
+      if((iCombo>>iSlot)&1)
+	out[iObj++]=iSlot;
+      iSlot++;
+    }
+  
+  return out;
 }
 
 // Find next k-combination
