@@ -122,7 +122,7 @@ public:
       for(int j=i+1;j<nPoints;j++)
 	{
 	  if(ass[iAss]!=0)
-	    res.push_back({{i,j},ass[iAss],nFreeLegsWhenAssigning[iAss]});
+	    res.push_back({{i,j},iAss,ass[iAss],nFreeLegsWhenAssigning[iAss]});
 	  
 	  iAss++;
 	}
@@ -140,18 +140,38 @@ public:
       getNonNullAssociations();
     
     /// Tensor product of all assignemnt heads and tail case
-    vector<int64_t> caseAss(2*nnAss.size());
+    vector<int64_t> curr(2*nnAss.size());
     
     /// Last assignemnt before overflow
-    vector<int64_t> lastAss(2*nnAss.size());
+    vector<int64_t> last(2*nnAss.size());
     
-    for(int iAss=0;iAss<nnAss.size();iAss++)
+    for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
       {
-    	caseAss[iAss*2+0]=
-	  
+	/// Type of functions using int the following
+	using F2=
+	  decltype(nCombinations<int64_t>);
+	
+	/// Function pointers to compute total numbers of from/to
+	constexpr array<F2*,2> firstPoss=
+	  {firstCombination,firstDisposition};
+	
+	/// Function pointers to compute last of from/to
+	constexpr array<F2*,2> lastPoss=
+	  {lastCombination,lastDisposition};
+	
+	/// Nonnull ass
+	const NnAss& a=
+	  nnAss[iNnAss];
+	
+	const int& iAss=
+	  a.iAss;
+	
+	// Loop on from/to to compute the first and last of all possibilities
+	for(int ft=0;ft<2;ft++)
+	  for(auto& currLast : array<tuple<vector<int64_t>&,array<F2*,2>>,2>{{{curr,firstPoss},{last,lastPoss}}})
+	    get<0>(currLast)[iNnAss*2+ft]=
+	      get<1>(currLast)[ft](a.nLines,nFreeLegsWhenAssigning[iAss][ft]);
       }
-
-    qua
   }
   
   WicksFinder(const vector<int>& nLegsPerPoint,const Assignment& ass) :
@@ -206,24 +226,6 @@ public:
 
 int main(int narg,char **arg)
 {
-  constexpr int nSlots=
-    4;
-  
-  int nObj=
-    3;
-
-  forAllCombinations(nObj,nSlots,[&](const int64_t& t){cout<<bitRep<int64_t,nSlots>(t)<<endl;});
-  cout<<bitRep(lastCombination(3,5))<<endl;
-  
-  return 0;
-  
-  
-  int nDisp=
-    nDispositions(nObj,nSlots);
-  
-  for(int64_t iDisp=0;iDisp<nDisp;iDisp++)
-    cout<<decryptDisposition(nObj, nSlots,iDisp)<<endl;
-  return 0;
   
   for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
     cout<<newtonBinomial(a.first,a.second)<<endl;
@@ -244,6 +246,8 @@ int main(int narg,char **arg)
   WicksFinder wicksFinder(nPoint,allAss.front());
   
   cout<<"NWick of: "<<allAss.front()<<": "<<wicksFinder.nAllWickContrs()<<endl;
+  
+  wicksFinder.forAllWicks([](){});
   
   // for(int i=0;i<10;i++)
   //   {

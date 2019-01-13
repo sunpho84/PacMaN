@@ -30,6 +30,9 @@ public:
   /// Index of the points where the assignment start and ends
   const array<int,2> iPoint;
   
+  /// Index of the association
+  const int iAss;
+  
   /// Number of lines
   const int nLines;
   
@@ -39,8 +42,8 @@ public:
   /// Number of possible assignements of he source and sink of the line
   const array<int64_t,2> nPoss;
   
-  NnAss(const array<int,2>& iPoint,const int& nLines,const array<int,2>& nFreeLegsWhenAssigning) :
-    iPoint(iPoint),nLines(nLines),nFreeLegsWhenAssigning(nFreeLegsWhenAssigning),
+  NnAss(const array<int,2>& iPoint,const int& iAss,const int& nLines,const array<int,2>& nFreeLegsWhenAssigning) :
+    iPoint(iPoint),iAss(iAss),nLines(nLines),nFreeLegsWhenAssigning(nFreeLegsWhenAssigning),
     nPoss({nCombinations(nLines,nFreeLegsWhenAssigning[FROM]),nDispositions(nLines,nFreeLegsWhenAssigning[TO])})
   {
   };

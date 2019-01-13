@@ -119,6 +119,22 @@ T nDispositions(const int& nObj,const int& nSlots)
     factorialsRatio<T>(nSlots,nSlots-nObj);
 }
 
+/// Returns the first dispositions of nObj objects into nSlots slots
+template <typename T=int64_t>
+T firstDisposition(const int& nObj,const int& nSlots)
+{
+  return
+    0;
+}
+
+/// Returns the last dispositions of nObj objects into nSlots slots
+template <typename T=int64_t>
+T lastDisposition(const int& nObj,const int& nSlots)
+{
+  return
+    nDispositions(nObj, nSlots)-1;
+}
+
 /// Returns the number of combinations (unordered choices) of nObj objects into nSlots slots
 template <typename T=int64_t>
 T nCombinations(const int& nObj,const int& nSlots)
@@ -136,15 +152,15 @@ T nextCombination(const T& extX)
     make_unsigned_t<T>;
   
   /// Local unsigned copy
-  U x=
+  const U x=
     static_cast<U>(extX);
   
   /// Extract rightmost bit 1
-  U u=
+  const U u=
     x & -x;
   
   /// Set last non-trailing bit 0, and clear to the right
-  U v
+  const U v
     =u+x;
   
   return
@@ -153,7 +169,7 @@ T nextCombination(const T& extX)
 
 /// First combination of nObj objects
 template <typename T=int64_t>
-T firstCombination(const int& nObj)
+T firstCombination(const int& nObj,const int& nSlots=0)
 {
   return
     (static_cast<T>(1)<<nObj)-1;
