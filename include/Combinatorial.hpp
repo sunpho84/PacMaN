@@ -78,7 +78,7 @@ vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
     }
   
   // Increment chosen one
-  for(int iObj=nObj-2;iObj>=0;iObj++)
+  for(int iObj=nObj-2;iObj>=0;iObj--)
     for(int jObj=iObj+1;jObj<nObj;jObj++)
       if(choice[jObj]>=choice[iObj])
 	choice[jObj]++;
@@ -123,7 +123,7 @@ template <typename T=int64_t>
 T lastDisposition(const int& nObj,const int& nSlots)
 {
   return
-    nDispositions(nObj, nSlots)-1;
+    nDispositions(nObj,nSlots)-1;
 }
 
 /// Returns the number of combinations (unordered choices) of nObj objects into nSlots slots
