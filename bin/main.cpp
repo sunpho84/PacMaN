@@ -167,11 +167,13 @@ public:
 	  nFreeLegsWhenAssigning[iAss][FROM];
 	
 	/// Last possible assignment on the head
-	int64_t lastPossFrom=
+	const int64_t lastPossFrom=
 	  lastCombination(nLegsToAss,nFreeLegsFrom);
 	
 	/// Store the starting side combination
-	for(int64_t possFrom=firstCombination(nLegsToAss,nFreeLegsFrom);possFrom<lastPossFrom;possFrom=nextCombination(possFrom))
+	for(int64_t possFrom=firstCombination(nLegsToAss,nFreeLegsFrom);
+	    possFrom<=lastPossFrom;
+	    possFrom=nextCombination(possFrom))
 	  possTable[2*iNnAss+FROM].push_back(decryptCombination(nLegsToAss,nFreeLegsFrom,possFrom));
 	
 	/// Number of free legs when assigning the tail
@@ -179,12 +181,47 @@ public:
 	  nFreeLegsWhenAssigning[iAss][TO];
 	
 	/// Last possible assignment on the tail
-	int64_t lastPossTo=
+	const int64_t lastPossTo=
 	  lastDisposition(nLegsToAss,nFreeLegsTo);
 	
 	/// Store the ending side disposition
-	for(int64_t possTo=firstDisposition(nLegsToAss,nFreeLegsTo);possTo<lastPossTo;possTo=nextDisposition(possTo))
+	for(int64_t possTo=firstDisposition(nLegsToAss,nFreeLegsTo);
+	    possTo<=lastPossTo;
+	    possTo=nextDisposition(possTo))
 	  possTable[2*iNnAss+TO].push_back(decryptDisposition(nLegsToAss,nFreeLegsTo,possTo));
+      }
+    
+    /// Number of digits
+    const int nDigits=
+      2*nnAss.size();
+    
+    /// Last digit
+    const int lastDigit=
+      nDigits-1;
+    
+    /// Index of the digit
+    int iDigit=
+      lastDigit;
+    
+    /// Digits representing the possibility
+    vector<int> digits(nDigits,0);
+    
+    while(iDigit>=0)
+      {
+	cout<<"CATE ";
+	for(int i=0;i<nDigits;i++)
+	  cout<<digits[i]<<"("<<possTable[i][digits[i]]<<")"<<" ";
+	cout<<endl;
+	
+	while(iDigit>=0 and (++digits[iDigit])>=(int)possTable[iDigit].size())
+	  digits[iDigit--]=
+	      0;
+	
+	if(iDigit>=0)
+	  iDigit=
+	    lastDigit;
+	
+	cout<<"   "<<iDigit<<endl;
       }
   }
   
@@ -240,7 +277,6 @@ public:
 
 int main(int narg,char **arg)
 {
-  
   for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
     cout<<newtonBinomial(a.first,a.second)<<endl;
   
