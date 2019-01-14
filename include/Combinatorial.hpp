@@ -55,7 +55,7 @@ T nPermutations(const int& n)
     factorial<T>(n);
 }
 
-/// Takes the id disposition of nObj numbers into nSlots slots,and returns its assigned choice
+/// Takes the id disposition of nObj numbers into nSlots slots, and returns its assigned choice
 template <typename T>
 vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
 {
@@ -77,30 +77,13 @@ vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
       mask++;
     }
   
-  /// Returned permutation element
-  vector<int> out(nSlots,-1);
-  for(int iObj=0;iObj<nObj;iObj++)
-    {
-      /// Poisition is initially 0
-      int p=
-	0;
-      
-      // Find the c-th non null and not used
-      while(choice[iObj]!=0 or out[p]>=0)
-	{
-	  // If current is free, decrease number to move for the choice
-	  if(out[p]<0)
-	    choice[iObj]--;
-	  
-	  // Increment target position
-	  p++;
-	}
-      
-      // Mark down
-      out[p]=iObj;
-    }
+  // Increment chosen one
+  for(int iObj=nObj-2;iObj>=0;iObj++)
+    for(int jObj=iObj+1;jObj<nObj;jObj++)
+      if(choice[jObj]>=choice[iObj])
+	choice[jObj]++;
   
-  return out;
+  return choice;
 }
 
 /// Takes the id disposition of n numbers into n slots,and returns its assigned choice
@@ -169,7 +152,8 @@ vector<int> decryptCombination(const int& nObj,const int& nSlots,T iCombo)
   while(iObj<nObj and iSlot<nSlots)
     {
       if((iCombo>>iSlot)&1)
-	out[iObj++]=iSlot;
+	out[iObj++]=
+	  iSlot;
       iSlot++;
     }
   
@@ -180,7 +164,7 @@ vector<int> decryptCombination(const int& nObj,const int& nSlots,T iCombo)
 template <typename T>
 T nextCombination(const T& extX)
 {
-  ///B Unsigned version of T
+  /// Unsigned version of T
   using U=
     make_unsigned_t<T>;
   
@@ -193,8 +177,8 @@ T nextCombination(const T& extX)
     x & -x;
   
   /// Set last non-trailing bit 0, and clear to the right
-  const U v
-    =u+x;
+  const U v=
+    u+x;
   
   return
     static_cast<T>(v+(((v^x)/u)>>2));
