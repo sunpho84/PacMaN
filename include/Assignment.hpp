@@ -114,11 +114,13 @@ public:
 	
 	/// Number of points in row which would remain unassigned even
 	/// if we assigned to it all other points (excluded col)
-	const int unassignedInRow=accumulate(N.begin()+col+1,N.end(),toBeAssFrom,minus<int>());
+	const int unassignedInRow=
+	  accumulate(N.begin()+col+1,N.end(),toBeAssFrom,minus<int>());
 	
 	/// Number of points in col which would remain unassigned even
 	/// if we assigned to it all other points (excluded row)
-	const int unassignedInCol=accumulate(N.begin()+row+1,N.end(),2*toBeAssTo,minus<int>());
+	const int unassignedInCol=
+	  accumulate(N.begin()+row+1,N.end(),2*toBeAssTo,minus<int>());
 	
 	/// Minimal value to assign to this (row,col) line
 	///
