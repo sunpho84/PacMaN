@@ -227,4 +227,77 @@ void forAllCombinations(const int& nObj,const int& nSlots,F f)
     }
 }
 
+/////////////////////////////////////////////////////////////////
+
+/// Represents a mixed basis number
+class Digits
+{
+public:
+  
+  /// Base of each digit
+  const vector<int> base;
+  
+  /// Number of digits
+  int nDigits() const
+  {
+    return base.size();
+  };
+  
+  /// Last digit
+  const int lastDigit;
+  
+  /// Digits rerpresenting the number
+  vector<int> digits;
+    
+  Digits(const vector<int>& base) :
+    base(base),
+    lastDigit(nDigits()-1),
+    digits(nDigits())
+  {
+  }
+  
+  /// Set to a given number
+  template <typename T>
+  void setTo(T t)
+  {
+    for(int iDigit=nDigits()-1;iDigit>=0;iDigit--)
+      {
+	// Choice of the i-th digitect
+	digits[iDigit]=
+	  t%base[iDigit];
+	
+	t/=
+	  base[iDigit];
+      }
+  }
+  
+  /// Loop on all numbers
+  template <typename F>
+  void forAllNumbers(F f)
+  {
+    // Reset
+    setTo(0);
+    
+    /// Index of the running digit
+    int iDigit=
+      lastDigit;
+    
+    // Loops on all numbers
+    while(iDigit>=0)
+      {
+	// Exec the function
+	f(digits);
+	
+	while(iDigit>=0 and (++digits[iDigit])>=base[iDigit])
+	  digits[iDigit--]=
+	    0;
+	
+	// If not run on all
+	if(iDigit>=0)
+	  iDigit=
+	    lastDigit;
+      }
+  }
+};
+
 #endif

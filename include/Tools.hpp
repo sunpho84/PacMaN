@@ -9,6 +9,10 @@
 
 using namespace std;
 
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define DEFAULT "\x1b[39m"
+
 /// Compute the square
 template <typename T>
 T sqr(const T& t)

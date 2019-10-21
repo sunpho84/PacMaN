@@ -8,6 +8,7 @@ void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<i
   
   // Header
   os<<"\\documentclass{standalone}"<<endl;
+  os<<"\\usepackage{morewrites}"<<endl;
   os<<"\\usepackage[pdf]{graphviz}"<<endl;
   os<<endl;
   os<<"\\begin{document}"<<endl;
@@ -25,13 +26,13 @@ void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<i
 	  return "N_"+to_string(iG)+"_"+to_string(i);
 	};
       
-      os<<"\\digraph{G"<<iG<<"}{ "<<endl;
+      os<<"\\neatograph{G"<<iG<<"}{ "<<endl;
       
       // Draws the labels
       for(int iNode=0;iNode<N;iNode++)
 	os<<node(iNode)<<" ["
-	  <<" label=\""<<nPoint[iNode]<<"\""
-	  <<" pos=\""<<cos(2*M_PI*iNode/N)<<","<<sin(2*M_PI*iNode/N)<<"!\""
+	  <<" label=\""<<(char)('a'+iNode)<<"\""// nPoint[iNode]<<"\""
+	  <<" pos=\""<<cos(M_PI*(2*iNode+1)/N)<<","<<sin(M_PI*(2*iNode+1)/N)<<"!\""
 	  <<" shape=\"circle\""
 	  <<"];"<<endl;
       
@@ -40,7 +41,7 @@ void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<i
       for(int row=0;row<N;row++)
 	for(int col=row+1;col<N;col++)
 	  for(int h=a[i++];h>0;h--)
-	    os<<node(row)<<" -> "<<node(col)<<" [arrowhead=none]"<<endl;
+	    os<<node(row)<<" -- "<<node(col)<<" [arrowhead=none]"<<endl;
       
       // Trailer
       os<<"}"<<endl;

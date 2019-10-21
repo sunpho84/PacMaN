@@ -8,7 +8,7 @@
 
 #include <fstream>
 
-/// Creates all Wick contraction, given a n-point fucntion and an assignment
+/// Creates all Wick contraction, given a n-point function and an assignment
 class WicksFinder
 {
   /// Number of legs in each point
@@ -43,6 +43,9 @@ class WicksFinder
   
   /// Total number of permutations of all propagator assignment
   const int64_t nPermAllAss;
+  
+  /// Number of legs before the given point
+  const vector<int> nLegsBefPoint;
   
   /// Compute the number of free legs on the head and tail of all
   /// associations when assigning each of them in turn
@@ -191,38 +194,46 @@ public:
 	  possTable[2*iNnAss+TO].push_back(decryptDisposition(nLegsToAss,nFreeLegsTo,possTo));
       }
     
-    /// Number of digits
-    const int nDigits=
-      2*nnAss.size();
+    /// Looper on all possibilities
+    Digits possibilitiesLooper(fillVector<int>(possTable.size(),[&possTable](const int& i)
+					       {
+						 return possTable[i].size();
+					       }));
     
-    /// Last digit
-    const int lastDigit=
-      nDigits-1;
-    
-    /// Index of the digit
-    int iDigit=
-      lastDigit;
-    
-    /// Digits representing the possibility
-    vector<int> digits(nDigits,0);
-    
-    while(iDigit>=0)
-      {
-	cout<<"CATE ";
-	for(int i=0;i<nDigits;i++)
-	  cout<<digits[i]<<"("<<possTable[i][digits[i]]<<")"<<" ";
-	cout<<endl;
-	
-	while(iDigit>=0 and (++digits[iDigit])>=(int)possTable[iDigit].size())
-	  digits[iDigit--]=
-	      0;
-	
-	if(iDigit>=0)
-	  iDigit=
-	    lastDigit;
-	
-	cout<<"   "<<iDigit<<endl;
-      }
+    possibilitiesLooper.forAllNumbers([&](const vector<int>& possDigits)
+				      {
+					/// Store the assignment of the leg
+					vector<int> legAss(nLegs,-1);
+					
+					for(int iDigit=0;iDigit<(int)possDigits.size();iDigit++)
+					  {
+					    /// Gets the id of the non-null assignment
+					    // const int iNnAss=
+					    //   iDigit/2;
+					    
+					    /// From/to
+					    // const int ft=
+					    //   iNnAss%2;
+					    
+					    /// Index of starting point of the digit (might be the start or end)
+					    // const int& beg=
+					    //   nnAss[iNnAss].iPoint[ft];
+					    
+					    /// Index of the leg
+					    // int ileg=
+					    //   beg;
+					    
+					    vector<int> assCombo=
+					      possTable[iDigit][possDigits[iDigit]];
+					    
+					    //ANNAwhile(legAss[iLeg]>=0 and 
+					    
+					    // fillVector<vector<int>>(possDigits.size(),[&](const int& idigit)
+					    // 		      {
+					    // 			return possTable[idigit][poss[idigit]]					cout<<;
+					    // 		      })<<endl;
+					  }
+				      });
   }
   
   WicksFinder(const vector<int>& nLegsPerPoint,const Assignment& ass) :
@@ -232,12 +243,12 @@ public:
     pointOfLeg(fillVector<int>(nLegs,[&](const int ileg)
 			       {
 				 /// Index of the output point
-				 int iPoint
-				   =0;
+				 int iPoint=
+				   0;
 				 
 				 /// Sum of all legs of points [0,ipoint)
-				 int sumLegs
-				   =0;
+				 int sumLegs=
+				   0;
 				 
 				 while(ileg>=sumLegs+nLegsPerPoint[iPoint])
 				   sumLegs+=nLegsPerPoint[iPoint++];
@@ -260,11 +271,24 @@ public:
 						 out/=
 						   nPermPerAss[triId(iPoint,jPoint,nPoints)];
 					       
-					       return out;
+					       return
+						 out;
 					     })),
     nLegsPermAllPoints(productorial(nLegsPermPerPoint)),
     nFreeLegsWhenAssigning(getNFreeLegsWhenAssigning()),
-    nPermAllAss(productorial(nPermPerAss))
+    nPermAllAss(productorial(nPermPerAss)),
+    nLegsBefPoint(fillVector<int>(nLegsPerPoint.size(),[&](const int iPoint)
+				  {
+				    /// Result
+				    int res=
+				      0;
+				    
+				    for(int jPoint=0;jPoint<iPoint;jPoint++)
+				      res+=nLegsPerPoint[jPoint];
+				    
+				    return
+				      res;
+				  }))
   {
     cout<<" ANNA propStr: "<<nLegsPerPoint<<endl;
     cout<<" ANNA ass: "<<ass<<endl;
@@ -277,12 +301,14 @@ public:
 
 int main(int narg,char **arg)
 {
-  for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
-    cout<<newtonBinomial(a.first,a.second)<<endl;
+  // for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
+  //   cout<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
   const vector<int> nPoint=
-    {3,3,2,4};
+  //    {3,3,2,4};
+    // {3,3,3,3};
+    {2,2,2,2,4};
   
   /// Finder of all assignments
   AssignmentsFinder assignmentsFinder(nPoint);
@@ -291,7 +317,10 @@ int main(int narg,char **arg)
   vector<Assignment> allAss=
     assignmentsFinder.getAllAssignements();
   
-  //drawAllAssignments("",allAss,nPoint);
+  ofstream assignmentTex("/tmp/assignments.tex");
+  drawAllAssignments(assignmentTex,allAss,nPoint);
+  
+  return 0;
   
   WicksFinder wicksFinder(nPoint,allAss.front());
   
