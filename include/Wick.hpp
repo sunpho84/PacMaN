@@ -213,35 +213,35 @@ public:
 					vector<array<int,2>> legAss(nLegs/2);
 					cout<<"Listing possible Wick contraction "<<iWick<<endl;
 					
-					for(int iDigit=0;iDigit<(int)possDigits.size();iDigit++)
-					  {
-					    /// Gets the id of the non-null assignment
-					    const int iNnAss=
-					      iDigit/2;
+					// for(int iDigit=0;iDigit<(int)possDigits.size();iDigit++)
+					//   {
+					//     /// Gets the id of the non-null assignment
+					//     const int iNnAss=
+					//       iDigit/2;
 					    
-					    /// From/to
-					    const int ft=
-					      iNnAss%2;
+					//     /// From/to
+					//     const int ft=
+					//       iNnAss%2;
 					    
-					    /// Index of starting or ending point of the assignment according to ft
-					    const int& beg=
-					      nnAss[iNnAss].iPoint[ft];
+					//     /// Index of starting or ending point of the assignment according to ft
+					//     const int& beg=
+					//       nnAss[iNnAss].iPoint[ft];
 					    
-					    /// Index of the leg
-					    int ileg=
-					      beg;
+					//     /// Index of the leg
+					//     int ileg=
+					//       beg;
 					    
-					    /// Digit representing the choice
-					    const uint64_t& digit=
-					      possDigits[iDigit];
+					//     /// Digit representing the choice
+					//     const uint64_t& digit=
+					//       possDigits[iDigit];
 					    
-					    cout<<"From point "<<digit<<" - "<<ileg<<endl;
+					//     cout<<"From point "<<digit<<" - "<<ileg<<endl;
 					    
-					    vector<int> assCombo=
-					      possTable[iDigit][digit];
+					//     vector<int> assCombo=
+					//       possTable[iDigit][digit];
 					    
-					    cout<<assCombo<<endl;
-					  }
+					//     cout<<assCombo<<endl;
+					//   }
 					
 					int iAss=
 					  0;
@@ -252,14 +252,8 @@ public:
 					    
 					    // cout<<"iNnAss: "<<iNnAss<<endl;
 					    
-					    const int iFrom=
-					      2*iNnAss+FROM;
-					    
-					    const int iTo=
-					      2*iNnAss+TO;
-					    
 					    const int *poss=
-					      &possDigits[iFrom];
+					      &possDigits[2*iNnAss];
 					    
 					    // cout<<"Digit From: "<<poss[FROM]<<", to: "<<poss[TO]<<endl;
 					    
@@ -269,7 +263,7 @@ public:
 					    // cout<<"Point From: "<<iPoint[FROM]<<", to: "<<iPoint[TO]<<endl;
 					    
 					    array<vector<int>,2> ftLinePoss=
-					      {possTable[iFrom][poss[FROM]],possTable[iTo][poss[TO]]};
+					      {possTable[2*iNnAss+FROM][poss[FROM]],possTable[2*iNnAss+TO][poss[TO]]};
 					    
 					    // cout<<"Poss From: "<<ftLinePoss[FROM]<<", to: "<<ftLinePoss[TO]<<endl;
 					    
@@ -305,29 +299,21 @@ public:
 					    // Now we mark all assigned
 					    for(int iLine=0;iLine<nLegsPerAss;iLine++)
 					      {
-						cout<<"Line "<<iLine<<" from "<<pointsLegAss[iLine][FROM]<<" to "<<pointsLegAss[iLine][TO]<<endl;
-						
 						for(int ft=0;ft<2;ft++)
-						  { 
+						  {
 						    legAss[iAss][ft]=
 						      pointsLegAss[iLine][ft];
 						  
-						  legIsAss[pointsLegAss[iLine][ft]]=
-						    true;
+						    legIsAss[pointsLegAss[iLine][ft]]=
+						      true;
 						  }
 						
 						iAss++;
+					      }
 					  }
-					  }
+					
 					for(int iLeg=0;iLeg<nLegs/2;iLeg++)
 					  cout<<"Assigning line "<<iLeg<<" from leg "<<legAss[iLeg][FROM]<<" to "<<legAss[iLeg][TO]<<endl;
-					    
-					    //ANNAwhile(legAss[iLeg]>=0 and 
-					    
-					    // fillVector<vector<int>>(possDigits.size(),[&](const int& idigit)
-					    // 		      {
-					    // 			return possTable[idigit][poss[idigit]]					cout<<;
-					    // 		      })<<endl;
 					
 					iWick++;
 					cout<<endl;
