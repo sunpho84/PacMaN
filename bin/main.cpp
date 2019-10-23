@@ -11,6 +11,8 @@
 #include <map>
 #include <sstream>
 
+#include <gsl/gsl_permutation.h>
+
 /// Get iBit bit of i
 template <typename I>
 bool getBit(const I& i,const int& iBit)
@@ -19,7 +21,14 @@ bool getBit(const I& i,const int& iBit)
     (i>>iBit)&1;
 }
 
-int countNClosedLoops(const vector<int>& g)
+int countNClosedLoops(const gsl_permutation* p)
+{
+  return
+    gsl_permutation_linear_cycles(p);
+}
+  
+  
+inline int countNClosedLoops(vector<int> g)
 {
   /// Number of closed loops found
   int nClosedLoops=
@@ -29,21 +38,18 @@ int countNClosedLoops(const vector<int>& g)
   int i=
     0;
   
-  vector<bool> visited(g.size(),false);
   while(i<(int)g.size())
-    if(visited[i])
+    if(g[i]<0)
       i++;
     else
       {
+	int next=g[i];
 	// cout<<i<<endl;
-	visited[i]=true;
-	i=g[i];
+	g[i]=-1;
+	i=next;
 	
-	if(visited[i])
-	  {
-	    // cout<<"Closed loop"<<endl;
-	    nClosedLoops++;
-	  }
+	// cout<<"Closed loop"<<endl;
+	nClosedLoops+=(g[next]<0);
       }
   
   return
@@ -127,11 +133,16 @@ int main(int narg,char **arg)
   
   /// Total permutation representing trace + Wick contractions
   vector<int> totPermSingleContr(2*nTotPoints,-1);
+  gsl_permutation *gslP=gsl_permutation_alloc(2*nTotPoints);
   cout<<"Printing the trace"<<endl;
   for(auto p : traceStructure)
     {
       cout<<p[0]*2+1<<" "<<p[1]*2<<endl;
-      totPermSingleContr[p[0]*2+1]=p[1]*2;
+      const int in=p[0]*2+1;
+      const int out=p[1]*2;
+      totPermSingleContr[in]=out;
+      
+      gslP->data[in]=out;
     }
   
   // Loop on all propagator assignment
@@ -151,6 +162,7 @@ int main(int narg,char **arg)
       map<int,int> colFact;
       
       wicksFinder.forAllWicks([&iWick,&totPermSingleContr,// &traceNodes,
+			       &gslP,
 			       &colFact](Wick& wick)
 			      {
 				//  cout<<endl;
@@ -201,6 +213,8 @@ int main(int narg,char **arg)
 					totPermSingleContr[ou0]=in1;
 					totPermSingleContr[ou1]=in0;
 					
+					gslP->data[ou0]=in1;
+					gslP->data[ou1]=in0;
 					// cout<<"\t _"<<ou0<<" -> _"<<in1<<endl;
 					// cout<<"\t _"<<ou1<<" -> _"<<in0<<endl;
 				      }
@@ -208,6 +222,8 @@ int main(int narg,char **arg)
 				    /// Determine the number of closed loops, which counts ncol^nloops
 				    const int nClosedLoops=
 				      countNClosedLoops(totPermSingleContr);
+				    
+				    //cout<<"Nclosed loops: "<<nClosedLoops<<" "<<countNClosedLoops(gslP)<<endl;
 				    
 				    //cout<<"Nclosed loops: "<<nClosedLoops<<", ndisco trace: "<<nDiscoTraces<<endl;
 				    
