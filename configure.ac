@@ -19,6 +19,13 @@ AM_SILENT_RULES([yes])
 AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 AX_CXXFLAGS_WARN_ALL
 
+AC_CHECK_LIB(gsl, gsl_sf_airy_Ai_e,
+             [LIBS="${LIBS} -lgsl -lgslcblas"], 
+             [AC_MSG_ERROR([Cannot find Gnu Scientific Library.])],
+             [-lgslcblas])
+AC_CHECK_HEADER([gsl/gsl_version.h], ,
+             [AC_MSG_ERROR([Cannot find GSL headers.])])
+
 #openMP
 AC_OPENMP
 CFLAGS="$CXXFLAGS $OPENMP_CFLAGS"
