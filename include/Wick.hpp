@@ -1,6 +1,8 @@
 #ifndef _WICK_HPP
 #define _WICK_HPP
 
+#include <memory>
+
 #include "Assignment.hpp"
 
 using namespace std;
@@ -105,7 +107,25 @@ class WicksFinder
       out;
   }
   
+  /// Precomputed list of all possible assignment
+  vector<vector<vector<int>>> possTable;
+  
+  /// Non-null associations
+  vector<NnAss> nnAss;
+  
+  /// Looper on all possibilities
+  unique_ptr<Digits> possibilitiesLooper;
+  
 public:
+  
+  /// Return first Wick contraction
+  Wick getFirst()
+  {
+    possibilitiesLooper->setTo(0);
+    
+    return
+      convertDigitsToWick(possibilitiesLooper->digits);
+  }
   
   /// Compute the number of all Wick contractions
   int64_t nAllWickContrs()
@@ -139,12 +159,95 @@ public:
       res;
   }
   
-  /// Loops on all Wick contractions, executing the function on it
-  template <typename F>
-  void forAllWicks(F f) const
+  /// Convert the digits of the Wick contraction id written in terms of digits into an actual Wick contraction
+  Wick convertDigitsToWick(const vector<int>& wickDigits)
+    const
   {
-    /// Non-null associations
-    vector<NnAss> nnAss=
+    /// Store wether the leg is assigned
+    vector<int> legIsAss(nLegs,false);
+    
+    /// Store the assignment of the legs, in form of lines connecting two legs
+    Wick lineAss(nLines);
+    
+    /// Index of the line to assign
+    int iLineToAss=
+      0;
+    
+    for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
+      {
+	/// Number of legs for this assignment
+	const int nLegsPerAss=
+	  nnAss[iNnAss].nLines;
+	
+	/// Legs connected by the lines of this assignment
+	///
+	/// We need to temporarily store this, because in the table
+	/// of possibility they are counted as a whole block
+	vector<array<int,2>> pointsLegAss(nLegsPerAss);
+	
+	for(int iLine=0;iLine<nLegsPerAss;iLine++)
+	  for(int ft=0;ft<2;ft++)
+	    {
+	      // At first, set the leg to the number of legs preceeding
+	      // the point (which is the lable of the first leg of the point)
+	      int& l=
+		pointsLegAss[iLine][ft]=
+		nLegsBefPoint[nnAss[iNnAss].iPoint[ft]];
+	      
+	      // Then skip needed unassigned legs
+	      int count=
+		possTable[2*iNnAss+ft][wickDigits[2*iNnAss+ft]][iLine];
+	      while(count>0 or legIsAss[l])
+		{
+		  if(not legIsAss[l])
+		    count--;
+		  l++;
+		}
+	    }
+	
+	// Now we mark all assigned
+	for(int iLegPerAss=0;iLegPerAss<nLegsPerAss;iLegPerAss++)
+	  {
+	    for(int ft=0;ft<2;ft++)
+	      {
+		lineAss[iLineToAss][ft]=
+		  pointsLegAss[iLegPerAss][ft];
+		
+		legIsAss[pointsLegAss[iLegPerAss][ft]]=
+		  true;
+	      }
+	    
+	    iLineToAss++;
+	  }
+      }
+    
+    return
+      lineAss;
+  }
+  
+/// Loops on all Wick contractions, executing the function on it
+  template <typename F>
+  void forAllWicks(F f)
+    const
+  {
+    /// Index of the Wick contraction
+    int64_t iWick=0;
+    
+    possibilitiesLooper->forAllNumbers([&,this](const vector<int>& wickDigits)
+				       {
+					 /// Line assigments
+					 Wick lineAss=
+					   convertDigitsToWick(wickDigits);
+					 
+					 f(lineAss);
+					 iWick++;
+				       });
+  }
+  
+  /// Reset the WicksFinder
+  void reset()
+  {
+    nnAss=
       getNonNullAssociations();
     
     // for(auto& n : nnAss)
@@ -156,8 +259,7 @@ public:
     // 	cout<<" N poss: "<<n.nPoss<<endl;
     //   }
     
-    /// Precomputed list of all possible assignment
-    vector<vector<vector<int>>> possTable(2*nnAss.size());
+    possTable.resize(2*nnAss.size());
     
     /// Tensor product of all assignment heads and tail case
     vector<int64_t> curr(2*nnAss.size());
@@ -208,78 +310,11 @@ public:
 	  possTable[2*iNnAss+TO].push_back(decryptDisposition(nLegsToAss,nFreeLegsTo,possTo));
       }
     
-    /// Looper on all possibilities
-    Digits possibilitiesLooper(fillVector<int>(possTable.size(),[&possTable](const int& i)
-					       {
-						 return possTable[i].size();
-					       }));
-    
-    /// Index of the Wick contraction
-    int64_t iWick=0;
-    
-    possibilitiesLooper.forAllNumbers([&](const vector<int>& possDigits)
-				      {
-					/// Store wether the leg is assigned
-					vector<int> legIsAss(nLegs,false);
-					
-					/// Store the assignment of the legs, in form of lines connecting two legs
-					Wick lineAss(nLines);
-					
-					/// Index of the line to assign
-					int iLineToAss=
-					  0;
-					
-					for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
-					  {
-					    /// Number of legs for this assignment
-					    const int nLegsPerAss=
-					      nnAss[iNnAss].nLines;
-					    
-					    /// Legs connected by the lines of this assignment
-					    ///
-					    /// We need to temporarily store this, because in the table
-					    /// of possibility they are counted as a whole block
-					    vector<array<int,2>> pointsLegAss(nLegsPerAss);
-					    
-					    for(int iLine=0;iLine<nLegsPerAss;iLine++)
-					      for(int ft=0;ft<2;ft++)
-						{
-						  // At first, set the leg to the number of legs preceeding
-						  // the point (which is the lable of the first leg of the point)
-						  int& l=
-						    pointsLegAss[iLine][ft]=
-						    nLegsBefPoint[nnAss[iNnAss].iPoint[ft]];
-						  
-						  // Then skip needed unassigned legs
-						  int count=
-						    possTable[2*iNnAss+ft][possDigits[2*iNnAss+ft]][iLine];
-						  while(count>0 or legIsAss[l])
-						    {
-						      if(not legIsAss[l])
-							count--;
-						      l++;
-						    }
-						}
-					    
-					    // Now we mark all assigned
-					    for(int iLegPerAss=0;iLegPerAss<nLegsPerAss;iLegPerAss++)
-					      {
-						for(int ft=0;ft<2;ft++)
-						  {
-						    lineAss[iLineToAss][ft]=
-						      pointsLegAss[iLegPerAss][ft];
-						  
-						    legIsAss[pointsLegAss[iLegPerAss][ft]]=
-						      true;
-						  }
-						
-						iLineToAss++;
-					      }
-					  }
-					
-					f(lineAss);
-					iWick++;
-				      });
+    possibilitiesLooper=
+      make_unique<Digits>(fillVector<int>(possTable.size(),[this](const int& i)
+							   {
+							     return possTable[i].size();
+							   }));
   }
   
   WicksFinder(const vector<int>& nLegsPerPoint,const Assignment& ass) :
@@ -322,6 +357,8 @@ public:
 				      res;
 				  }))
   {
+    reset();
+    
     // cout<<" ANNA propStr: "<<nLegsPerPoint<<endl;
     // cout<<" ANNA ass: "<<ass<<endl;
     // cout<<" ANNA nLegsPermPerPoint: "<<nLegsPermPerPoint<<endl;

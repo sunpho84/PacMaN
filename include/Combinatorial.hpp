@@ -246,7 +246,8 @@ public:
   /// Number of digits
   int nDigits() const
   {
-    return base.size();
+    return
+      base.size();
   };
   
   /// Last digit
