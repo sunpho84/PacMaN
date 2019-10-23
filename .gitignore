@@ -14,3 +14,4 @@ build*
 GTAGS
 /GPATH
 /GRTAGS
+/include/config.hpp.in

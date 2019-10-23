@@ -5,6 +5,12 @@
 
 using namespace std;
 
+/// A line connects two points
+typedef array<int,2> Line;
+
+/// Wick contraction is a list of lines
+typedef vector<Line> Wick;
+
 /// Creates all Wick contraction, given a n-point function and an assignment
 class WicksFinder
 {
@@ -16,6 +22,9 @@ class WicksFinder
   
   /// Total number of legs
   const int nLegs;
+  
+  /// Total number of lines, equal to half the legs
+  const int nLines;
   
   /// Point where the leg is attached
   const vector<int> pointOfLeg;
@@ -205,118 +214,71 @@ public:
 						 return possTable[i].size();
 					       }));
     
-    int iWick=0;
+    /// Index of the Wick contraction
+    int64_t iWick=0;
+    
     possibilitiesLooper.forAllNumbers([&](const vector<int>& possDigits)
 				      {
 					/// Store wether the leg is assigned
 					vector<int> legIsAss(nLegs,false);
-					vector<array<int,2>> legAss(nLegs/2);
-					cout<<"Listing possible Wick contraction "<<iWick<<endl;
 					
-					// for(int iDigit=0;iDigit<(int)possDigits.size();iDigit++)
-					//   {
-					//     /// Gets the id of the non-null assignment
-					//     const int iNnAss=
-					//       iDigit/2;
-					    
-					//     /// From/to
-					//     const int ft=
-					//       iNnAss%2;
-					    
-					//     /// Index of starting or ending point of the assignment according to ft
-					//     const int& beg=
-					//       nnAss[iNnAss].iPoint[ft];
-					    
-					//     /// Index of the leg
-					//     int ileg=
-					//       beg;
-					    
-					//     /// Digit representing the choice
-					//     const uint64_t& digit=
-					//       possDigits[iDigit];
-					    
-					//     cout<<"From point "<<digit<<" - "<<ileg<<endl;
-					    
-					//     vector<int> assCombo=
-					//       possTable[iDigit][digit];
-					    
-					//     cout<<assCombo<<endl;
-					//   }
+					/// Store the assignment of the legs, in form of lines connecting two legs
+					Wick lineAss(nLines);
 					
-					int iAss=
+					/// Index of the line to assign
+					int iLineToAss=
 					  0;
 					
 					for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
 					  {
-					    // cout<<"--"<<endl;
-					    
-					    // cout<<"iNnAss: "<<iNnAss<<endl;
-					    
-					    const int *poss=
-					      &possDigits[2*iNnAss];
-					    
-					    // cout<<"Digit From: "<<poss[FROM]<<", to: "<<poss[TO]<<endl;
-					    
-					    const array<int,2>& iPoint=
-					      nnAss[iNnAss].iPoint;
-					    
-					    // cout<<"Point From: "<<iPoint[FROM]<<", to: "<<iPoint[TO]<<endl;
-					    
-					    array<vector<int>,2> ftLinePoss=
-					      {possTable[2*iNnAss+FROM][poss[FROM]],possTable[2*iNnAss+TO][poss[TO]]};
-					    
-					    // cout<<"Poss From: "<<ftLinePoss[FROM]<<", to: "<<ftLinePoss[TO]<<endl;
-					    
+					    /// Number of legs for this assignment
 					    const int nLegsPerAss=
 					      nnAss[iNnAss].nLines;
 					    
-					    // cout<<"nLegsPerAss: "<<nLegsPerAss<<endl;
-					    
+					    /// Legs connected by the lines of this assignment
+					    ///
+					    /// We need to temporarily store this, because in the table
+					    /// of possibility they are counted as a whole block
 					    vector<array<int,2>> pointsLegAss(nLegsPerAss);
+					    
 					    for(int iLine=0;iLine<nLegsPerAss;iLine++)
 					      for(int ft=0;ft<2;ft++)
 						{
 						  // At first, set the leg to the number of legs preceeding
-						  //the point (which is the lable of the first leg of the point)
-						  const int& n=
-						    nLegsBefPoint[iPoint[ft]];
-						  
+						  // the point (which is the lable of the first leg of the point)
 						  int& l=
 						    pointsLegAss[iLine][ft]=
-						    n;
+						    nLegsBefPoint[nnAss[iNnAss].iPoint[ft]];
 						  
-						  // cout<<"Starting from "<<l<<" "<<legIsAss<<endl;
-						  
-						  // Then skip ftLinePoss[ft][iLine] unassigned legs
-						  for(int count=ftLinePoss[ft][iLine];count>0 or legIsAss[l];count-=(not legIsAss[l]))
+						  // Then skip needed unassigned legs
+						  int count=
+						    possTable[2*iNnAss+ft][possDigits[2*iNnAss+ft]][iLine];
+						  while(count>0 or legIsAss[l])
 						    {
+						      if(not legIsAss[l])
+							count--;
 						      l++;
-						      // cout<<" skipping, "<<l<<" count: "<<count<<endl;
 						    }
-						  // cout<<" result: "<<l<<endl;
 						}
 					    
 					    // Now we mark all assigned
-					    for(int iLine=0;iLine<nLegsPerAss;iLine++)
+					    for(int iLegPerAss=0;iLegPerAss<nLegsPerAss;iLegPerAss++)
 					      {
 						for(int ft=0;ft<2;ft++)
 						  {
-						    legAss[iAss][ft]=
-						      pointsLegAss[iLine][ft];
+						    lineAss[iLineToAss][ft]=
+						      pointsLegAss[iLegPerAss][ft];
 						  
-						    legIsAss[pointsLegAss[iLine][ft]]=
+						    legIsAss[pointsLegAss[iLegPerAss][ft]]=
 						      true;
 						  }
 						
-						iAss++;
+						iLineToAss++;
 					      }
 					  }
 					
-					for(int iLeg=0;iLeg<nLegs/2;iLeg++)
-					  cout<<"Assigning line "<<iLeg<<" from leg "<<legAss[iLeg][FROM]<<" to "<<legAss[iLeg][TO]<<endl;
-					
+					f(lineAss);
 					iWick++;
-					cout<<endl;
 				      });
   }
   
@@ -324,6 +286,7 @@ public:
     nLegsPerPoint(nLegsPerPoint),
     nPoints(nLegsPerPoint.size()),
     nLegs(summatorial(nLegsPerPoint)),
+    nLines(nLegs/2),
     pointOfLeg(fillVector<int>(nLegs,[&](const int ileg)
 			       {
 				 /// Index of the output point
@@ -359,10 +322,10 @@ public:
 				      res;
 				  }))
   {
-    cout<<" ANNA propStr: "<<nLegsPerPoint<<endl;
-    cout<<" ANNA ass: "<<ass<<endl;
-    cout<<" ANNA nLegsPermPerPoint: "<<nLegsPermPerPoint<<endl;
-    cout<<" ANNA nFreeLegsWhenAssigning: "<<nFreeLegsWhenAssigning<<endl;
+    // cout<<" ANNA propStr: "<<nLegsPerPoint<<endl;
+    // cout<<" ANNA ass: "<<ass<<endl;
+    // cout<<" ANNA nLegsPermPerPoint: "<<nLegsPermPerPoint<<endl;
+    // cout<<" ANNA nFreeLegsWhenAssigning: "<<nFreeLegsWhenAssigning<<endl;
   }
 };
 

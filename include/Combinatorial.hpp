@@ -6,6 +6,12 @@
 
 using namespace std;
 
+/// Partition of a number
+typedef vector<int> Partition;
+
+/// List all partitioning of the number m
+vector<Partition> listAllPartitioningOf(int m);
+
 /// Factorial
 template <typename T=int64_t>
 T factorial(const int& n)
