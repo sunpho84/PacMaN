@@ -16,8 +16,6 @@
 ofstream realCout("/dev/stdout");
 ofstream fakeCout("/dev/null");
 
-#define COUT ((rankId==0)?realCout:fakeCout)
-
 /// Number of ranks
 int nRanks;
 

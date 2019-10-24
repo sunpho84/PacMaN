@@ -1,3 +1,4 @@
+#include <Tools.hpp>
 #include <Wick.hpp>
 
 int64_t computeNTotWicks(const vector<Assignment>& allAss,const vector<int>& nPoints,const bool verbose)
@@ -15,7 +16,7 @@ int64_t computeNTotWicks(const vector<Assignment>& allAss,const vector<int>& nPo
 	WicksFinder(nPoints,ass).nAllWickContrs(false);
       
       if(verbose)
-	cout<<" "<<ass<<" nWick: "<<nWicks<<endl;
+	COUT<<" "<<ass<<" nWick: "<<nWicks<<endl;
       
       nTotWicks+=
 	nWicks;

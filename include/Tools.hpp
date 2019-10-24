@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <fstream>
 #include <utility>
 #include <vector>
 
@@ -16,6 +17,11 @@ using namespace std;
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
 #define DEFAULT "\x1b[39m"
+
+extern int nRanks,rankId;
+extern ofstream realCout,fakeCout;
+
+#define COUT ((rankId==0)?realCout:fakeCout)
 
 /// Compute the square
 template <typename T>
@@ -208,8 +214,6 @@ map<K,V> allReduceMap(const map<K,V>& in)
 {
   /// Result
   map<K,V> out;
-  
-  extern int nRanks,rankId;
   
   MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
