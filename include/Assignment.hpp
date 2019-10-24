@@ -141,16 +141,16 @@ public:
 	const int maxAss=
 	  min(toBeAssFrom,toBeAssTo);
 	
-	indent(cout,i)<<"(";
-	for(int r=0;r<nN;r++)
-	  {
-	    if(r==row) cout<<RED;
-	    if(r==col) cout<<GREEN;
-	    cout<<N[r];
-	    if(r==row or r==col) cout<<DEFAULT;
-	    if(r!=nN-1) cout<<",";
-	  }
-	cout<<"), Row: "<<row<<", toBeAss(from,to)): ("<<toBeAssFrom<<","<<toBeAssTo<<"), Col: "<<col<<", iD: "<<i<<", minAss: "<<minAss<<", maxAss: "<<maxAss<<endl;
+	// indent(cout,i)<<"(";
+	// for(int r=0;r<nN;r++)
+	//   {
+	//     if(r==row) cout<<RED;
+	//     if(r==col) cout<<GREEN;
+	//     cout<<N[r];
+	//     if(r==row or r==col) cout<<DEFAULT;
+	//     if(r!=nN-1) cout<<",";
+	//   }
+	// cout<<"), Row: "<<row<<", toBeAss(from,to)): ("<<toBeAssFrom<<","<<toBeAssTo<<"), Col: "<<col<<", iD: "<<i<<", minAss: "<<minAss<<", maxAss: "<<maxAss<<endl;
 	
 	// Increment the column
 	int nextCol=(col==nN-1)?(row+2):(col+1);
@@ -161,7 +161,7 @@ public:
 	// Loop on all assignment to this element
 	for(int a=minAss;a<=maxAss;a++)
 	  {
-	    indent(cout,i)<<" Assigning: "<<a<<endl;
+	    // indent(cout,i)<<" Assigning: "<<a<<endl;
 	    
 	    // assign
 	    ass[i]=a;
@@ -176,7 +176,7 @@ public:
 	    N[row]+=a;
 	    N[col]+=a;
 	    
-	    indent(cout,i)<<" Returning: "<<N<<endl;
+	    // indent(cout,i)<<" Returning: "<<N<<endl;
 	  }
       }
     else
@@ -185,22 +185,22 @@ public:
 	
 	if(acceptable)
 	  {
-	    indent(cout,i)<<" Found good assignment: "<<ass<<endl;
-	    for(int r=0;r<nN;r++)
-	      {
-		indent(cout,i)<<"  ";
-		for(int c=0;c<r;c++)
-		  cout<<ass[triId(c,r,nN)]<<" ";
-		cout<<"0 ";
-		for(int c=r+1;c<nN;c++)
-		  cout<<ass[triId(r,c,nN)]<<" ";
-		cout<<endl;
-	      }
+	    // indent(cout,i)<<" Found good assignment: "<<ass<<endl;
+	    // for(int r=0;r<nN;r++)
+	    //   {
+	    // 	indent(cout,i)<<"  ";
+	    // 	for(int c=0;c<r;c++)
+	    // 	  cout<<ass[triId(c,r,nN)]<<" ";
+	    // 	cout<<"0 ";
+	    // 	for(int c=r+1;c<nN;c++)
+	    // 	  cout<<ass[triId(r,c,nN)]<<" ";
+	    // 	cout<<endl;
+	    //   }
 	    
 	    allAss.push_back(ass);
 	  }
-	else
-	  indent(cout,i)<<" Not a good assignment, remained "<<N.back()<<" to be assigned"<<endl;
+	// else
+	//   indent(cout,i)<<" Not a good assignment, remained "<<N.back()<<" to be assigned"<<endl;
       }
   }
   
@@ -215,7 +215,8 @@ public:
     
     getAllAssignments(allAss,ass);
     
-    return allAss;
+    return
+      allAss;
   }
 };
 

@@ -128,9 +128,10 @@ public:
   }
   
   /// Compute the number of all Wick contractions
-  int64_t nAllWickContrs()
+  int64_t nAllWickContrs(const bool verbose=true)
   {
-    cout<<" nLegsPermAllPoints "<<nLegsPermAllPoints<<" , nPermAllAss: "<<nPermAllAss<<endl;
+    if(verbose)
+      cout<<" nLegsPermAllPoints "<<nLegsPermAllPoints<<" , nPermAllAss: "<<nPermAllAss<<endl;
     
     return
       nLegsPermAllPoints/nPermAllAss;
@@ -365,5 +366,8 @@ public:
     // cout<<" ANNA nFreeLegsWhenAssigning: "<<nFreeLegsWhenAssigning<<endl;
   }
 };
+
+/// Compute the number of all Wick contractions
+int64_t computeNTotWicks(const vector<Assignment>& allAss,const vector<int>& nPoints,const bool verbose=true);
 
 #endif

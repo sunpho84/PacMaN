@@ -7,5 +7,6 @@ bin_PROGRAMS=main
 main_SOURCES= \
 	main.cpp \
 	../src/Assignment.cpp \
-	../src/Combinatorial.cpp
+	../src/Combinatorial.cpp \
+	../src/Wick.cpp
 

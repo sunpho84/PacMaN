@@ -11,6 +11,8 @@
 #include <map>
 #include <sstream>
 
+#include <omp.h>
+
 /// Get iBit bit of i
 template <typename I>
 bool getBit(const I& i,const int& iBit)
@@ -148,6 +150,12 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
 
 int main(int narg,char **arg)
 {
+  int nThreads;
+  
+#pragma omp parallel
+  nThreads=
+    omp_get_num_threads();
+  
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
     //{{2},{2},{4},{2,2}};
@@ -201,11 +209,9 @@ int main(int narg,char **arg)
     nTotPoints/2;
   cout<<nLines<<endl;
   
+  /// Compute the number of all Wick contractions
   int64_t nTotWicks=
-    0;
-   for(auto& ass : allAss)
-    nTotWicks+=
-      WicksFinder(nPoints,ass).nAllWickContrs();
+    computeNTotWicks(allAss,nPoints);
   cout<<"Total number of Wick contractions: "<<nTotWicks<<endl;
   
   int64_t nTotColTraces=
@@ -219,7 +225,7 @@ int main(int narg,char **arg)
   
   const auto start=
     takeTime();
-
+  
   const int timeBetweenPrints=
     10;
   
@@ -256,6 +262,7 @@ int main(int narg,char **arg)
 				  (1<<nLines);
 				
 				// Loop over whether we take connected or disconnected trace for each Wick
+#pragma omp parallel for
 				for(int iCD=0;iCD<nCD;iCD++)
 				  {
 				    int nPow,sign;
@@ -287,8 +294,8 @@ int main(int narg,char **arg)
 					cout<<
 					  "NWick done: "<<iWick<<"/"<<nTotWicks<<", "
 					  "elapsed time: "<<elapsed<<" s , "
-					  "tot expected: "<<nTotWicks*elapsed/iWick<<" s , "
-					  "time to end: "<<(nTotWicks-iWick)*elapsed/iWick<<" s"<<endl;
+					  "tot expected: "<<nTotWicks*elapsed/iWick/nThreads<<" s , "
+					  "time to end: "<<(nTotWicks-iWick)*elapsed/iWick/nThreads<<" s"<<endl;
 				      }
 				    
 				  }
