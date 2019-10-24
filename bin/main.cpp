@@ -11,7 +11,7 @@
 #include <map>
 #include <sstream>
 
-#include <omp.h>
+#include <mpi.h>
 
 /// Get iBit bit of i
 template <typename I>
@@ -164,17 +164,18 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
 
 int main(int narg,char **arg)
 {
-  int nThreads;
+  MPI_Init(&narg,&arg);
   
-#pragma omp parallel
-  nThreads=
-    omp_get_num_threads();
-  cout<<"NThreads: "<<nThreads<<endl;
+  int nRanks;
+  MPI_Comm_size(MPI_COMM_WORLD,&nRanks);
+  
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-    // {{2},{2},{4},{2,2}};
-    {{6},{6},{6}};
+    {{2},{2},{4},{2,2}};
+    // {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -185,11 +186,11 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-    // {2,2,4,4};
-    {6,6,6};
+    {2,2,4,4};
+    // {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
-
+  
   cout<<"Possible partitions of 6 :"<<endl;
   for(auto y : listAllPartitioningOf(6))
     cout<<y<<endl;
@@ -242,10 +243,6 @@ int main(int narg,char **arg)
   int nSecToNextOutput=
     0;
   
-  /// Index od the Wick contraction done so far
-  int64_t iWick=
-    0;
-  
   // Loop on all propagator assignment
   for(auto& ass : allAss)
     {
@@ -254,95 +251,97 @@ int main(int narg,char **arg)
       
       // cout<<"Wick contractions of assignment: "<<ass<< endl;
       
-      map<int,int> colFact;
-#pragma omp parallel
-      {
+      map<int64_t,int64_t> colFact;
       /// Lister of all Wick contractions
       WicksFinder wicksFinder(nPoints,ass);
       
-      const int n=wicksFinder.nAllWickContrs();
+      const int64_t n=wicksFinder.nAllWickContrs();
       
-      int64_t nDonePerThread=0;
+      const int64_t workLoad=
+	(n+nRanks-1)/nRanks;
       
-#pragma omp for reduction(summassign:colFact)
-      for(int iWick=0;iWick<n;iWick++)
-      // wicksFinder.forAllWicks([&](Wick& wick)
-			      {
-				/// Lister of all Wick contractions
-				const Wick wick=
-				  wicksFinder.get(iWick);
-				//  cout<<endl;
-				
-				// cout<<"Wick contraction "<<iWick<<endl;
-				// for(auto& w : wick)
-				//   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
-				
-				/// Total permutation representing trace + Wick contractions
-				vector<int> totPermSingleContr(2*nTotPoints,-1);
-				
-				// Fill the trace part
-				for(auto p : traceStructure)
-				  {
-				    const int in=p[0]*2+1;
-				    const int out=p[1]*2;
-				    totPermSingleContr[in]=out;
-				  }
-				
-				// Loop over whether we take connected or disconnected trace for each Wick
-				for(int iCD=0;iCD<nCD;iCD++)
-				  {
-				    // auto _totPermSingleContr=
-				    //   totPermSingleContr;
-				    
-				    int nPow,sign;
-				    
-				    tie(nPow,sign)=
-				      getColFact(nLines,wick,iCD,totPermSingleContr);
-				    
-				    colFact[nPow]+=
-				      sign;
-				  }
-				
-				nDonePerThread++;
-				
-				// iWick++;
-				if(omp_get_thread_num()==0)
-				  if(iWick*nThreads%10000==0)
-				  {
-				    const auto now=
-				      takeTime();
-				    
-				    const int nSecFromStart=
-				      durationInSec(now-start);
-				    
-				    if(nSecFromStart>=nSecToNextOutput)
-				      {
-					nSecToNextOutput=
-					  nSecFromStart+timeBetweenPrints;
-					
-					const double elapsed=
-					  durationInSec(now-start);
-					
-					const int norm=
-					  (iWick+1)*nThreads;
-					
-					cout<<
-					  "NWick done: "<<norm<<"/"<<nTotWicks<<", "
-					  "elapsed time: "<<elapsed<<" s , "
-					  "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
-					  "time to end: "<<(nTotWicks-norm)*elapsed/(norm)<<" s"<<endl;
-				      }
-				    
-				  }
-			      }//);
+      const int64_t beg=
+	workLoad*rank;
       
-      printf("%d done %ld Wick contr\n",omp_get_thread_num(),nDonePerThread);
-      }      
-      for(auto cf : colFact)
-	printf("%+d*n^(%d) ",cf.second,cf.first);
-      printf("\n");
+      const int64_t end=
+	std::min(n,beg+workLoad);
       
-      cout<<"NWick: "<<iWick<<endl;
+      for(int iWick=beg;iWick<end;iWick++)
+	{
+	  /// Lister of all Wick contractions
+	  const Wick wick=
+	    wicksFinder.get(iWick);
+	  //  cout<<endl;
+	  
+	  // cout<<"Wick contraction "<<iWick<<endl;
+	  // for(auto& w : wick)
+	  //   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
+	  
+	  /// Total permutation representing trace + Wick contractions
+	  vector<int> totPermSingleContr(2*nTotPoints,-1);
+	  
+	  // Fill the trace part
+	  for(auto p : traceStructure)
+	    {
+	      const int in=p[0]*2+1;
+	      const int out=p[1]*2;
+	      totPermSingleContr[in]=out;
+	    }
+	  
+	  // Loop over whether we take connected or disconnected trace for each Wick
+	  for(int iCD=0;iCD<nCD;iCD++)
+	    {
+	      // auto _totPermSingleContr=
+	      //   totPermSingleContr;
+	      
+	      int nPow,sign;
+	      
+	      tie(nPow,sign)=
+		getColFact(nLines,wick,iCD,totPermSingleContr);
+	      
+	      colFact[nPow]+=
+		sign;
+	    }
+	  
+	  if(rank==0)
+	    {
+	      const auto now=
+		takeTime();
+	      
+	      const int nSecFromStart=
+		durationInSec(now-start);
+	      
+	      if(nSecFromStart>=nSecToNextOutput)
+		{
+		  nSecToNextOutput=
+		    nSecFromStart+timeBetweenPrints;
+		  
+		  const double elapsed=
+		    durationInSec(now-start);
+		  
+		  const int norm=
+		    (iWick+1)*nRanks;
+		  
+		  cout<<
+		    "NWick done: "<<norm<<"/"<<nTotWicks<<", "
+		    "elapsed time: "<<elapsed<<" s , "
+		    "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
+		    "time to end: "<<(nTotWicks-norm)*elapsed/(norm)<<" s"<<endl;
+		}
+	    }
+	}
+      
+      // printf("%d done %ld Wick contr\n",omp_get_thread_num(),nDonePerThread);
+      
+      /// Reduce the colFact
+      colFact=allReduceMap(colFact);
+      
+      if(rank==0)
+	{
+	  for(auto cf : colFact)
+	    printf("%+ld*n^(%ld) ",cf.second,cf.first);
+	  printf("\n");
+	}
     }
   
   // for(int i=0;i<10;i++)
@@ -370,6 +369,8 @@ int main(int narg,char **arg)
   //   }
   
   // out_perm<<"}"<<endl;
+  
+  MPI_Finalize();
   
   return 0;
 }

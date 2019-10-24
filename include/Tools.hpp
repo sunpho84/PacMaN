@@ -5,8 +5,11 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <utility>
 #include <vector>
+
+#include <mpi.h>
 
 using namespace std;
 
@@ -197,6 +200,34 @@ double durationInSec(const Duration& duration) ///< Input duration
 {
   return
     std::chrono::duration<O>(duration).count();
+}
+
+template <typename K,typename V>
+map<K,V> allReduceMap(const map<K,V>& in)
+{
+  map<K,V> out;
+  
+  int nRanks;
+  MPI_Comm_size(MPI_COMM_WORLD,&nRanks);
+  
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  
+  for(int jRank=0;jRank<nRanks;jRank++)
+    {
+      int size=
+	in.size();
+      
+      MPI_Bcast(&size,1,MPI_INT,jRank,MPI_COMM_WORLD);
+      for(auto p : in)
+	{
+	  MPI_Bcast(&p,sizeof(p),MPI_CHAR,jRank,MPI_COMM_WORLD);
+	  out[p.first]+=p.second;
+	}
+    }
+  
+  return
+    out;
 }
 
 #endif
