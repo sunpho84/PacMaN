@@ -130,24 +130,26 @@ void getColFact(int& nPow,int& sign,const int& nLines,const Wick& wick,const int
       
       /// Determine whether the iLine bit is 0 (conn) or 1 (disco)
       const bool CD=
-	getBit(iCD,iLine);
+		getBit(iCD,iLine);
       
       // Count the number of disconnected traces, which counts (-1/ncol)^ndisco
       nDiscoTraces+=CD;
       
+	asm("# qui");
       /// We swap in1 and in0 if CD is 1
-      const int ou0=w[FROM]*2;
-      const int ou1=w[TO]*2;
-      const int in0=w[FROM^CD]*2+1;
-      const int in1=w[TO^CD]*2+1;
+      const int ou0=FROM*2;
+	const int ou1=TO*2;
+	const int in0=FROM^CD*2+1;
+	const int in1=TO^CD*2+1;
       
-      totPermSingleContr[ou0]=in1;
+	totPermSingleContr[w[0]]=in1;
       totPermSingleContr[ou1]=in0;
+		asm("# qua");
     }
   
   /// Determine the number of closed loops, which counts ncol^nloops
-  const int nClosedLoops=
-    countNClosedLoops(totPermSingleContr);
+  const int nClosedLoops=0;
+  //countNClosedLoops(totPermSingleContr);
   
   const bool parity=
     nDiscoTraces%2;
@@ -261,10 +263,12 @@ int main(int narg,char **arg)
       
       const int64_t n=wicksFinder.nAllWickContrs();
       
-#pragma omp parallel
-      {
 	WicksFinder temp(nPoints,ass);
 	
+				const Wick wick=
+				  temp.get(0);
+#pragma omp parallel
+      {
   const int timeBetweenPrints=
     10;
   
@@ -274,26 +278,20 @@ int main(int narg,char **arg)
       // map<int,int> colFact;
   int colFact=0;
   
-				const Wick wick=
-				  temp.get(0);
       int64_t nDone=0;
 	const int64_t wl=(n+nThreads-1)/nThreads;
 	const int64_t beg=wl*omp_get_thread_num();
 	const int64_t end=min(beg+wl,n);
 	
 	cout<<"Spawning thread "<<omp_get_thread_num()<<" from "<<beg<<" to "<<end<<endl;
-	asm("# qui");
 	for(int iWick=beg;iWick<end;iWick++)
 	  {
 	    // Loop over whether we take connected or disconnected trace for each Wick
 	    for(int iCD=0;iCD<nCD;iCD++)
 	      {
-		auto& _totPermSingleContr=
-		  totPermSingleContr;
-		
 		int nPow,sign;
 		
-		getColFact(nPow,sign,nLines,wick,iCD,_totPermSingleContr);
+		getColFact(nPow,sign,nLines,wick,iCD,totPermSingleContr);
 		
 		colFact// [nPow]
 		  +=
@@ -303,8 +301,7 @@ int main(int narg,char **arg)
 	    // iWick++;
 	    nDone++;
 	  }//);
-		asm("# qua");
-	cout<<"nDone: "<<nDone<<endl;
+		cout<<"nDone: "<<nDone<<" "<<colFact<<endl;
       }
       
       // for(auto cf : colFact)
