@@ -13,6 +13,11 @@
 
 #include <mpi.h>
 
+ofstream realCout("/dev/stdout");
+ofstream fakeCout("/dev/null");
+
+#define COUT ((rankId==0)?realCout:fakeCout)
+
 /// Number of ranks
 int nRanks;
 
@@ -28,15 +33,15 @@ bool getBit(const I& i,const int& iBit)
 }
 void summassign(map<int,int>& first,const map<int,int> &second)
 {
-  cout<<"Adding to {";
-  for(auto& s : first) cout<<"("<<s.first<<","<<s.second<<")";
-  cout<<"} the list: {";
-  for(auto& s : second) cout<<"("<<s.first<<","<<s.second<<")";
-  cout<<"} making: {";
+  COUT<<"Adding to {";
+  for(auto& s : first) COUT<<"("<<s.first<<","<<s.second<<")";
+  COUT<<"} the list: {";
+  for(auto& s : second) COUT<<"("<<s.first<<","<<s.second<<")";
+  COUT<<"} making: {";
   for(auto& s : second)
     first[s.first]+=s.second;
-  for(auto& s : second) cout<<"("<<s.first<<","<<s.second<<")";
-  cout<<"}"<<endl;
+  for(auto& s : second) COUT<<"("<<s.first<<","<<s.second<<")";
+  COUT<<"}"<<endl;
 }
 
 #pragma omp declare reduction(summassign:map<int,int>: summassign(omp_out,omp_in))
@@ -57,11 +62,11 @@ inline int countNClosedLoops(vector<int> g)
     else
       {
 	int next=g[i];
-	// cout<<i<<endl;
+	// COUT<<i<<endl;
 	g[i]=-1;
 	i=next;
 	
-	// cout<<"Closed loop"<<endl;
+	// COUT<<"Closed loop"<<endl;
 	nClosedLoops+=(g[next]<0);
       }
   
@@ -117,12 +122,12 @@ string traceDot(const vector<Partition>& pointsTraces)
 
 auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int>& totPermSingleContr)
 {
-  // cout<<" Writing conn disco "<<iCD<<" = ";
+  // COUT<<" Writing conn disco "<<iCD<<" = ";
   // for(int iLine=0;iLine<nLines;iLine++)
-  //   cout<<((iCD>>iLine)&1);
-  // cout<<endl<<endl;
+  //   COUT<<((iCD>>iLine)&1);
+  // COUT<<endl<<endl;
   
-  // cout<<traceNodes.str()<<endl;
+  // COUT<<traceNodes.str()<<endl;
   
   // Count the number of disconnected
   int nDiscoTraces=
@@ -186,7 +191,7 @@ int main(int narg,char **arg)
     makeWickOfPartitions(pointsTraces);
   
   // for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
-  //   cout<<newtonBinomial(a.first,a.second)<<endl;
+  //   COUT<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
   const vector<int> nPoints=
@@ -195,9 +200,9 @@ int main(int narg,char **arg)
     // {3,3,3,3};
     //{2,2,2,2,4};
   
-  cout<<"Possible partitions of 6 :"<<endl;
+  COUT<<"Possible partitions of 6 :"<<endl;
   for(auto y : listAllPartitioningOf(6))
-    cout<<y<<endl;
+    COUT<<y<<endl;
   
   /// Number of all points
   const int nTotPoints=
@@ -217,25 +222,25 @@ int main(int narg,char **arg)
   /// Total number of blob-connecting lines
   const int nLines=
     nTotPoints/2;
-  cout<<nLines<<endl;
+  COUT<<nLines<<endl;
   
   /// Compute the number of all Wick contractions
   int64_t nTotWicks=
     computeNTotWicks(allAss,nPoints);
-  cout<<"Total number of Wick contractions: "<<nTotWicks<<endl;
+  COUT<<"Total number of Wick contractions: "<<nTotWicks<<endl;
   
   /// Number of possible way to connect or disconnect
   const int64_t nCD=
     (1<<nLines);
-  cout<<"Number of traces options per Wick: "<<nCD<<endl;
+  COUT<<"Number of traces options per Wick: "<<nCD<<endl;
   
   int64_t nTotColTraces=
     nTotWicks<<nLines;
-  cout<<"Total number of traces: "<<nTotColTraces<<endl;
+  COUT<<"Total number of traces: "<<nTotColTraces<<endl;
   
   // auto wc=
   //   getColFact(nLines,WicksFinder(nPoints,allAss.front()).getFirst(),0,totPermSingleContr);
-  // cout<<get<0>(wc)<<" "<<get<1>(wc)<<endl;
+  // COUT<<get<0>(wc)<<" "<<get<1>(wc)<<endl;
   // return 0;
   
   const auto start=
@@ -250,10 +255,10 @@ int main(int narg,char **arg)
   // Loop on all propagator assignment
   for(auto& ass : allAss)
     {
-      cout<<"/////////////////////////////////////////////////////////////////"<<endl;
-      cout<<ass<<endl;
+      COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
+      COUT<<ass<<endl;
       
-      // cout<<"Wick contractions of assignment: "<<ass<< endl;
+      // COUT<<"Wick contractions of assignment: "<<ass<< endl;
       
       map<int64_t,int64_t> colFact;
       /// Lister of all Wick contractions
@@ -275,11 +280,11 @@ int main(int narg,char **arg)
 	  /// Lister of all Wick contractions
 	  const Wick wick=
 	    wicksFinder.get(iWick);
-	  //  cout<<endl;
+	  //  COUT<<endl;
 	  
-	  // cout<<"Wick contraction "<<iWick<<endl;
+	  // COUT<<"Wick contraction "<<iWick<<endl;
 	  // for(auto& w : wick)
-	  //   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
+	  //   COUT<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
 	  
 	  /// Total permutation representing trace + Wick contractions
 	  vector<int> totPermSingleContr(2*nTotPoints,-1);
@@ -326,7 +331,7 @@ int main(int narg,char **arg)
 		  const int norm=
 		    (iWick+1)*nRanks;
 		  
-		  cout<<
+		  COUT<<
 		    "NWick done: "<<norm<<"/"<<nTotWicks<<", "
 		    "elapsed time: "<<elapsed<<" s , "
 		    "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
@@ -350,8 +355,8 @@ int main(int narg,char **arg)
   
   // for(int i=0;i<10;i++)
   //   {
-  //     cout<<"/////////////////////////////////////////////////////////////////"<<endl;
-  //     cout<<wicksFinder.decryptWick(i)<<endl;
+  //     COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
+  //     COUT<<wicksFinder.decryptWick(i)<<endl;
   //   }
   
   // vector<int> perm{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19};
@@ -360,7 +365,7 @@ int main(int narg,char **arg)
   //      int beg=rand()%20;
   //      int end=rand()%(20-beg)+beg;
        
-  //      //cout<<beg<<" "<<end<<endl;
+  //      //COUT<<beg<<" "<<end<<endl;
   //      next_permutation(perm.begin()+beg,perm.begin()+end);
   //    }
    
@@ -369,7 +374,7 @@ int main(int narg,char **arg)
   // for(int i=0;i<(int)perm.size();i++)
   //   {
   //     out_perm<<i<<" -> "<<perm[i]<<endl;
-  //     cout<<" "<<perm[i]<<endl;
+  //     COUT<<" "<<perm[i]<<endl;
   //   }
   
   // out_perm<<"}"<<endl;
