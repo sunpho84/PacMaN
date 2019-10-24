@@ -173,8 +173,8 @@ int main(int narg,char **arg)
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-    // {{2},{2},{4},{2,2}};
-    {{6},{6},{6}};
+    {{2},{2},{4},{2,2}};
+    // {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -185,8 +185,8 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-    // {2,2,4,4};
-    {6,6,6};
+    {2,2,4,4};
+    // {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
 
