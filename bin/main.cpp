@@ -273,7 +273,7 @@ int main(int narg,char **arg)
       const int n=wicksFinder.nAllWickContrs();
       
 #pragma omp parallel for reduction(summassign:colFact)
-      for(int iWick=1;iWick<=n;iWick++)
+      for(int iWick=0;iWick<n;iWick++)
       // wicksFinder.forAllWicks([&](Wick& wick)
 			      {
 				const Wick wick=
@@ -301,7 +301,7 @@ int main(int narg,char **arg)
 				
 				// iWick++;
 				if(omp_get_thread_num()==0)
-				  if(iWick%10000==0)
+				  if(iWick*nThreads%10000==0)
 				  {
 				    const auto now=
 				      takeTime();
@@ -317,11 +317,14 @@ int main(int narg,char **arg)
 					const double elapsed=
 					  durationInSec(now-start);
 					
+					const int norm=
+					  (iWick+1)*nThreads;
+					
 					cout<<
-					  "NWick done: "<<iWick*nThreads<<"/"<<nTotWicks<<", "
+					  "NWick done: "<<norm<<"/"<<nTotWicks<<", "
 					  "elapsed time: "<<elapsed<<" s , "
-					  "tot expected: "<<nTotWicks*elapsed/(iWick*nThreads)<<" s , "
-					  "time to end: "<<(nTotWicks-iWick*nThreads)*elapsed/(iWick*nThreads)<<" s"<<endl;
+					  "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
+					  "time to end: "<<(nTotWicks-norm)*elapsed/(norm)<<" s"<<endl;
 				      }
 				    
 				  }
