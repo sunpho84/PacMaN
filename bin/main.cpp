@@ -262,6 +262,8 @@ int main(int narg,char **arg)
       
       const int n=wicksFinder.nAllWickContrs();
       
+      int64_t nDonePerThread=0;
+      
 #pragma omp for reduction(summassign:colFact)
       for(int iWick=0;iWick<n;iWick++)
       // wicksFinder.forAllWicks([&](Wick& wick)
@@ -301,6 +303,8 @@ int main(int narg,char **arg)
 				      sign;
 				  }
 				
+				nDonePerThread++;
+				
 				// iWick++;
 				if(omp_get_thread_num()==0)
 				  if(iWick*nThreads%10000==0)
@@ -331,6 +335,8 @@ int main(int narg,char **arg)
 				    
 				  }
 			      }//);
+      
+      printf("%d done %ld Wick contr\n",omp_get_thread_num(),nDonePerThread);
       }      
       for(auto cf : colFact)
 	printf("%+d*n^(%d) ",cf.second,cf.first);
