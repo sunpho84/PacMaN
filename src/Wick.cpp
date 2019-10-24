@@ -8,7 +8,7 @@ int64_t computeNTotWicks(const vector<Assignment>& allAss,const vector<int>& nPo
     0;
   
   if(verbose)
-    cout<<"List of all assignments: "<<endl;
+    COUT<<"List of all assignments: "<<endl;
   
   for(auto& ass : allAss)
     {
