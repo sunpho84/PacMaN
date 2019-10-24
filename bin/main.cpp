@@ -173,8 +173,8 @@ int main(int narg,char **arg)
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-    {{2},{2},{4},{2,2}};
-    // {{6},{6},{6}};
+    // {{2},{2},{4},{2,2}};
+    {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -185,8 +185,8 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-    {2,2,4,4};
-    // {6,6,6};
+    // {2,2,4,4};
+    {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
 
@@ -252,19 +252,21 @@ int main(int narg,char **arg)
       cout<<"/////////////////////////////////////////////////////////////////"<<endl;
       cout<<ass<<endl;
       
-      /// Lister of all Wick contractions
-      WicksFinder wicksFinder(nPoints,ass);
-      
       // cout<<"Wick contractions of assignment: "<<ass<< endl;
       
       map<int,int> colFact;
+#pragma omp parallel
+      {
+      /// Lister of all Wick contractions
+      WicksFinder wicksFinder(nPoints,ass);
       
       const int n=wicksFinder.nAllWickContrs();
       
-#pragma omp parallel for reduction(summassign:colFact)
+#pragma omp for reduction(summassign:colFact)
       for(int iWick=0;iWick<n;iWick++)
       // wicksFinder.forAllWicks([&](Wick& wick)
 			      {
+				/// Lister of all Wick contractions
 				const Wick wick=
 				  wicksFinder.get(iWick);
 				//  cout<<endl;
@@ -329,7 +331,7 @@ int main(int narg,char **arg)
 				    
 				  }
 			      }//);
-      
+      }      
       for(auto cf : colFact)
 	printf("%+d*n^(%d) ",cf.second,cf.first);
       printf("\n");
