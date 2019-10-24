@@ -226,14 +226,11 @@ public:
       lineAss;
   }
   
-/// Loops on all Wick contractions, executing the function on it
+  /// Loops on all Wick contractions, executing the function on it
   template <typename F>
   void forAllWicks(F f)
     const
   {
-    /// Index of the Wick contraction
-    int64_t iWick=0;
-    
     possibilitiesLooper->forAllNumbers([&,this](const vector<int>& wickDigits)
 				       {
 					 /// Line assigments
@@ -241,8 +238,16 @@ public:
 					   convertDigitsToWick(wickDigits);
 					 
 					 f(lineAss);
-					 iWick++;
 				       });
+  }
+  
+  /// Get the Wick contraction numberiWick
+  Wick get(const int64_t& iWick)
+  {
+    possibilitiesLooper->setTo(iWick);
+    
+    return
+      convertDigitsToWick(possibilitiesLooper->digits);
   }
   
   /// Reset the WicksFinder

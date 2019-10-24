@@ -20,6 +20,20 @@ bool getBit(const I& i,const int& iBit)
   return
     (i>>iBit)&1;
 }
+void summassign(map<int,int>& first,const map<int,int> &second)
+{
+  cout<<"Adding to {";
+  for(auto& s : first) cout<<"("<<s.first<<","<<s.second<<")";
+  cout<<"} the list: {";
+  for(auto& s : second) cout<<"("<<s.first<<","<<s.second<<")";
+  cout<<"} making: {";
+  for(auto& s : second)
+    first[s.first]+=s.second;
+  for(auto& s : second) cout<<"("<<s.first<<","<<s.second<<")";
+  cout<<"}"<<endl;
+}
+
+#pragma omp declare reduction(summassign:map<int,int>: summassign(omp_out,omp_in))
 
 inline int countNClosedLoops(vector<int> g)
 {
@@ -155,28 +169,30 @@ int main(int narg,char **arg)
 #pragma omp parallel
   nThreads=
     omp_get_num_threads();
+  cout<<"NThreads: "<<nThreads<<endl;
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-    //{{2},{2},{4},{2,2}};
-    {{6},{6},{6},{6}};
+    // {{2},{2},{4},{2,2}};
+    {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
     makeWickOfPartitions(pointsTraces);
-  
-  // for(auto y : listAllPartitioningOf(4))
-  //   cout<<y<<endl;
   
   // for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
   //   cout<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-    //{2,2,4,4};
-    {6,6,6,6};
+    // {2,2,4,4};
+    {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
+
+  cout<<"Possible partitions of 6 :"<<endl;
+  for(auto y : listAllPartitioningOf(6))
+    cout<<y<<endl;
   
   /// Number of all points
   const int nTotPoints=
@@ -214,6 +230,11 @@ int main(int narg,char **arg)
     computeNTotWicks(allAss,nPoints);
   cout<<"Total number of Wick contractions: "<<nTotWicks<<endl;
   
+  /// Number of possible way to connect or disconnect
+  const int64_t nCD=
+    (1<<nLines);
+  cout<<"Number of traces options per Wick: "<<nCD<<endl;
+  
   int64_t nTotColTraces=
     nTotWicks<<nLines;
   cout<<"Total number of traces: "<<nTotColTraces<<endl;
@@ -249,33 +270,38 @@ int main(int narg,char **arg)
       
       map<int,int> colFact;
       
-      wicksFinder.forAllWicks([&](Wick& wick)
+      const int n=wicksFinder.nAllWickContrs();
+      
+#pragma omp parallel for reduction(summassign:colFact)
+      for(int iWick=1;iWick<=n;iWick++)
+      // wicksFinder.forAllWicks([&](Wick& wick)
 			      {
+				const Wick wick=
+				  wicksFinder.get(iWick);
 				//  cout<<endl;
 				
 				// cout<<"Wick contraction "<<iWick<<endl;
 				// for(auto& w : wick)
 				//   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
 				
-				/// Number of possible way to connect or disconnect
-				const int64_t nCD=
-				  (1<<nLines);
-				
 				// Loop over whether we take connected or disconnected trace for each Wick
-#pragma omp parallel for
 				for(int iCD=0;iCD<nCD;iCD++)
 				  {
+				    auto& _totPermSingleContr=
+				      totPermSingleContr;
+				    
 				    int nPow,sign;
 				    
 				    tie(nPow,sign)=
-				      getColFact(nLines,wick,iCD,totPermSingleContr);
+				      getColFact(nLines,wick,iCD,_totPermSingleContr);
 				    
 				    colFact[nPow]+=
 				      sign;
 				  }
 				
-				iWick++;
-				if(iWick%10000==0)
+				// iWick++;
+				if(omp_get_thread_num()==0)
+				  if(iWick%10000==0)
 				  {
 				    const auto now=
 				      takeTime();
@@ -292,14 +318,14 @@ int main(int narg,char **arg)
 					  durationInSec(now-start);
 					
 					cout<<
-					  "NWick done: "<<iWick<<"/"<<nTotWicks<<", "
+					  "NWick done: "<<iWick*nThreads<<"/"<<nTotWicks<<", "
 					  "elapsed time: "<<elapsed<<" s , "
-					  "tot expected: "<<nTotWicks*elapsed/iWick/nThreads<<" s , "
-					  "time to end: "<<(nTotWicks-iWick)*elapsed/iWick/nThreads<<" s"<<endl;
+					  "tot expected: "<<nTotWicks*elapsed/(iWick*nThreads)<<" s , "
+					  "time to end: "<<(nTotWicks-iWick*nThreads)*elapsed/(iWick*nThreads)<<" s"<<endl;
 				      }
 				    
 				  }
-			      });
+			      }//);
       
       for(auto cf : colFact)
 	printf("%+d*n^(%d) ",cf.second,cf.first);
