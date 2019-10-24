@@ -209,17 +209,6 @@ int main(int narg,char **arg)
   ofstream assignmentTex("assignments.tex");
   drawAllAssignments(assignmentTex,allAss,nPoints);
   
-  /// Total permutation representing trace + Wick contractions
-  vector<int> totPermSingleContr(2*nTotPoints,-1);
-  
-  // Fill the trace part
-  for(auto p : traceStructure)
-    {
-      const int in=p[0]*2+1;
-      const int out=p[1]*2;
-      totPermSingleContr[in]=out;
-    }
-  
   /// Total number of blob-connecting lines
   const int nLines=
     nTotPoints/2;
@@ -284,16 +273,27 @@ int main(int narg,char **arg)
 				// for(auto& w : wick)
 				//   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
 				
+				/// Total permutation representing trace + Wick contractions
+				vector<int> totPermSingleContr(2*nTotPoints,-1);
+				
+				// Fill the trace part
+				for(auto p : traceStructure)
+				  {
+				    const int in=p[0]*2+1;
+				    const int out=p[1]*2;
+				    totPermSingleContr[in]=out;
+				  }
+				
 				// Loop over whether we take connected or disconnected trace for each Wick
 				for(int iCD=0;iCD<nCD;iCD++)
 				  {
-				    auto& _totPermSingleContr=
-				      totPermSingleContr;
+				    // auto _totPermSingleContr=
+				    //   totPermSingleContr;
 				    
 				    int nPow,sign;
 				    
 				    tie(nPow,sign)=
-				      getColFact(nLines,wick,iCD,_totPermSingleContr);
+				      getColFact(nLines,wick,iCD,totPermSingleContr);
 				    
 				    colFact[nPow]+=
 				      sign;
