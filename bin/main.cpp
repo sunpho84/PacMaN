@@ -35,29 +35,29 @@ void summassign(map<int,int>& first,const map<int,int> &second)
 
 #pragma omp declare reduction(summassign:map<int,int>: summassign(omp_out,omp_in))
 
-inline int countNClosedLoops(vector<int> g)
+inline int countNClosedLoops(const vector<int>& g)
 {
   /// Number of closed loops found
   int nClosedLoops=
     0;
   
-  /// Current position
-  int i=
-    0;
+  // /// Current position
+  // int i=
+  //   0;
   
-  while(i<(int)g.size())
-    if(g[i]<0)
-      i++;
-    else
-      {
-	int next=g[i];
-	// cout<<i<<endl;
-	g[i]=-1;
-	i=next;
+  // while(i<(int)g.size())
+  //   if(g[i]<0)
+  //     i++;
+  //   else
+  //     {
+  // 	int next=g[i];
+  // 	// cout<<i<<endl;
+  // 	g[i]=-1;
+  // 	i=next;
 	
-	// cout<<"Closed loop"<<endl;
-	nClosedLoops+=(g[next]<0);
-      }
+  // 	// cout<<"Closed loop"<<endl;
+  // 	nClosedLoops+=(g[next]<0);
+  //     }
   
   return
     nClosedLoops;
@@ -109,7 +109,7 @@ string traceDot(const vector<Partition>& pointsTraces)
     traceNodes.str();
 }
 
-auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int>& totPermSingleContr)
+void getColFact(int& nPow,int& sign,const int& nLines,const Wick& wick,const int64_t& iCD,vector<int>& totPermSingleContr)
 {
   // cout<<" Writing conn disco "<<iCD<<" = ";
   // for(int iLine=0;iLine<nLines;iLine++)
@@ -152,14 +152,11 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
   const bool parity=
     nDiscoTraces%2;
   
-  const int sign=
+  sign=
     1-parity*2;
   
-  const int nPow=
+  nPow=
     nClosedLoops-nDiscoTraces;
-  
-  return
-    make_tuple(nPow,sign);
 }
 
 int main(int narg,char **arg)
@@ -247,12 +244,6 @@ int main(int narg,char **arg)
   const auto start=
     takeTime();
   
-  const int timeBetweenPrints=
-    10;
-  
-  int nSecToNextOutput=
-    0;
-  
   /// Index od the Wick contraction done so far
   int64_t iWick=
     0;
@@ -268,71 +259,57 @@ int main(int narg,char **arg)
       
       // cout<<"Wick contractions of assignment: "<<ass<< endl;
       
-      map<int,int> colFact;
+      const int64_t n=wicksFinder.nAllWickContrs();
       
-      const int n=wicksFinder.nAllWickContrs();
-      
-#pragma omp parallel for reduction(summassign:colFact)
-      for(int iWick=0;iWick<n;iWick++)
-      // wicksFinder.forAllWicks([&](Wick& wick)
-			      {
+#pragma omp parallel
+      {
+	WicksFinder temp(nPoints,ass);
+	
+  const int timeBetweenPrints=
+    10;
+  
+  int nSecToNextOutput=
+    0;
+  
+      // map<int,int> colFact;
+  int colFact=0;
+  
 				const Wick wick=
-				  wicksFinder.get(iWick);
-				//  cout<<endl;
-				
-				// cout<<"Wick contraction "<<iWick<<endl;
-				// for(auto& w : wick)
-				//   cout<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
-				
-				// Loop over whether we take connected or disconnected trace for each Wick
-				for(int iCD=0;iCD<nCD;iCD++)
-				  {
-				    auto& _totPermSingleContr=
-				      totPermSingleContr;
-				    
-				    int nPow,sign;
-				    
-				    tie(nPow,sign)=
-				      getColFact(nLines,wick,iCD,_totPermSingleContr);
-				    
-				    colFact[nPow]+=
-				      sign;
-				  }
-				
-				// iWick++;
-				if(omp_get_thread_num()==0)
-				  if(iWick*nThreads%10000==0)
-				  {
-				    const auto now=
-				      takeTime();
-				    
-				    const int nSecFromStart=
-				      durationInSec(now-start);
-				    
-				    if(nSecFromStart>=nSecToNextOutput)
-				      {
-					nSecToNextOutput=
-					  nSecFromStart+timeBetweenPrints;
-					
-					const double elapsed=
-					  durationInSec(now-start);
-					
-					const int norm=
-					  (iWick+1)*nThreads;
-					
-					cout<<
-					  "NWick done: "<<norm<<"/"<<nTotWicks<<", "
-					  "elapsed time: "<<elapsed<<" s , "
-					  "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
-					  "time to end: "<<(nTotWicks-norm)*elapsed/(norm)<<" s"<<endl;
-				      }
-				    
-				  }
-			      }//);
+				  temp.get(0);
+      int64_t nDone=0;
+	const int64_t wl=(n+nThreads-1)/nThreads;
+	const int64_t beg=wl*omp_get_thread_num();
+	const int64_t end=min(beg+wl,n);
+	
+	cout<<"Spawning thread "<<omp_get_thread_num()<<" from "<<beg<<" to "<<end<<endl;
+	asm("# qui");
+	for(int iWick=beg;iWick<end;iWick++)
+	  {
+	    // Loop over whether we take connected or disconnected trace for each Wick
+	    for(int iCD=0;iCD<nCD;iCD++)
+	      {
+		auto& _totPermSingleContr=
+		  totPermSingleContr;
+		
+		int nPow,sign;
+		
+		getColFact(nPow,sign,nLines,wick,iCD,_totPermSingleContr);
+		
+		colFact// [nPow]
+		  +=
+		  sign;
+	      }
+	    
+	    // iWick++;
+	    nDone++;
+	  }//);
+		asm("# qua");
+	cout<<"nDone: "<<nDone<<endl;
+      }
       
-      for(auto cf : colFact)
-	printf("%+d*n^(%d) ",cf.second,cf.first);
-      printf("\n");
+      // for(auto cf : colFact)
+      // 	printf("%+d*n^(%d) ",cf.second,cf.first);
+      // printf("\n");
       
       cout<<"NWick: "<<iWick<<endl;
     }
