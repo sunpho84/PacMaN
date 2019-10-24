@@ -340,8 +340,12 @@ int main(int narg,char **arg)
       
       // printf("%d done %ld Wick contr\n",omp_get_thread_num(),nDonePerThread);
       
+      COUT<<"Time needed before reduction: "<<durationInSec(takeTime()-start)<<" s"<<endl;
+      
       /// Reduce the colFact
       colFact=allReduceMap(colFact);
+      
+      COUT<<"Time needed: "<<durationInSec(takeTime()-start)<<" s"<<endl;
       
       if(rankId==0)
 	{
