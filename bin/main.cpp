@@ -19,7 +19,6 @@ bool getBit(const I& i,const int& iBit)
     (i>>iBit)&1;
 }
 
-
 inline int countNClosedLoops(vector<int> g)
 {
   /// Number of closed loops found
@@ -142,18 +141,17 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
   
   const int nPow=
     nClosedLoops-nDiscoTraces;
-  //cout<<" "<<(parity?"-":"+")<<"nC^"<<nPow<<endl;
   
   return
-    tie(nPow,sign);
+    make_tuple(nPow,sign);
 }
 
 int main(int narg,char **arg)
 {
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-  {{2},{2},{4},{2,2}};
-    // {{6},{6},{3,3}};
+    //{{2},{2},{4},{2,2}};
+    {{6},{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -167,8 +165,8 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-       {2,2,4,4};
-    // {6,6,6};
+    //{2,2,4,4};
+    {6,6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
   
@@ -219,6 +217,18 @@ int main(int narg,char **arg)
   // cout<<get<0>(wc)<<" "<<get<1>(wc)<<endl;
   // return 0;
   
+  const auto start=
+    takeTime();
+
+  const int timeBetweenPrints=
+    10;
+  
+  int nSecToNextOutput=
+    0;
+  
+  /// Index od the Wick contraction done so far
+  int64_t iWick=
+    0;
   
   // Loop on all propagator assignment
   for(auto& ass : allAss)
@@ -231,15 +241,9 @@ int main(int narg,char **arg)
       
       // cout<<"Wick contractions of assignment: "<<ass<< endl;
       
-      int64_t iWick=
-	0;
-      
       map<int,int> colFact;
       
-      wicksFinder.forAllWicks([&iWick,
-			       &nLines,
-			       &totPermSingleContr,// &traceNodes,
-			       &colFact](Wick& wick)
+      wicksFinder.forAllWicks([&](Wick& wick)
 			      {
 				//  cout<<endl;
 				
@@ -264,7 +268,30 @@ int main(int narg,char **arg)
 				  }
 				
 				iWick++;
-				if(iWick%10000==0) cout<<" "<<iWick<<endl;
+				if(iWick%10000==0)
+				  {
+				    const auto now=
+				      takeTime();
+				    
+				    const int nSecFromStart=
+				      durationInSec(now-start);
+				    
+				    if(nSecFromStart>=nSecToNextOutput)
+				      {
+					nSecToNextOutput=
+					  nSecFromStart+timeBetweenPrints;
+					
+					const double elapsed=
+					  durationInSec(now-start);
+					
+					cout<<
+					  "NWick done: "<<iWick<<"/"<<nTotWicks<<", "
+					  "elapsed time: "<<elapsed<<" s , "
+					  "tot expected: "<<nTotWicks*elapsed/iWick<<" s , "
+					  "time to end: "<<(nTotWicks-iWick)*elapsed/iWick<<" s"<<endl;
+				      }
+				    
+				  }
 			      });
       
       for(auto cf : colFact)

@@ -2,6 +2,7 @@
 #define _TOOLS_HPP
 
 #include <bitset>
+#include <chrono>
 #include <functional>
 #include <iostream>
 #include <utility>
@@ -169,6 +170,33 @@ bitset<N> bitRep(const T& t)
   /// Bitset
   return
     *(reinterpret_cast<const bitset<N>*>(&t));
+}
+
+/// Machine clock type
+using Clock=
+		   std::chrono::steady_clock;
+
+/// Instant type, defining a moment in time
+using Instant=
+		   std::chrono::time_point<Clock>;
+
+/// Difference of time between two moments
+using Duration=
+		   decltype(Instant{}-Instant{});
+
+/// Get current time
+inline Instant takeTime()
+{
+  return
+    Clock::now();
+}
+
+/// Convert duration into seconds
+template <typename O=double>                    // Output type
+double durationInSec(const Duration& duration) ///< Input duration
+{
+  return
+    std::chrono::duration<O>(duration).count();
 }
 
 #endif
