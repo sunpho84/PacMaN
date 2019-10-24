@@ -202,25 +202,35 @@ double durationInSec(const Duration& duration) ///< Input duration
     std::chrono::duration<O>(duration).count();
 }
 
+/// Reduce a map
 template <typename K,typename V>
 map<K,V> allReduceMap(const map<K,V>& in)
 {
+  /// Result
   map<K,V> out;
   
-  int nRanks;
-  MPI_Comm_size(MPI_COMM_WORLD,&nRanks);
+  extern int nRanks,rankId;
   
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
   for(int jRank=0;jRank<nRanks;jRank++)
     {
+      /// Number of elements to send
       int size=
 	in.size();
       
       MPI_Bcast(&size,1,MPI_INT,jRank,MPI_COMM_WORLD);
-      for(auto p : in)
+      
+      auto it=
+	in.begin();
+      
+      for(int i=0;i<size;i++)
 	{
+	  /// Pair to send or receive
+	  pair<K,V> p;
+	  if(rankId==jRank)
+	    p=*(it++);
+	  
 	  MPI_Bcast(&p,sizeof(p),MPI_CHAR,jRank,MPI_COMM_WORLD);
 	  out[p.first]+=p.second;
 	}

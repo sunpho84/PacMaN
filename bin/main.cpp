@@ -13,6 +13,12 @@
 
 #include <mpi.h>
 
+/// Number of ranks
+int nRanks;
+
+/// Rank id
+int rankId;
+
 /// Get iBit bit of i
 template <typename I>
 bool getBit(const I& i,const int& iBit)
@@ -166,16 +172,14 @@ int main(int narg,char **arg)
 {
   MPI_Init(&narg,&arg);
   
-  int nRanks;
   MPI_Comm_size(MPI_COMM_WORLD,&nRanks);
   
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-    {{2},{2},{4},{2,2}};
-    // {{6},{6},{6}};
+  //{{2},{2},{4},{2,2}};
+    {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -186,8 +190,8 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-    {2,2,4,4};
-    // {6,6,6};
+  // {2,2,4,4};
+  {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
   
@@ -261,7 +265,7 @@ int main(int narg,char **arg)
 	(n+nRanks-1)/nRanks;
       
       const int64_t beg=
-	workLoad*rank;
+	workLoad*rankId;
       
       const int64_t end=
 	std::min(n,beg+workLoad);
@@ -303,7 +307,7 @@ int main(int narg,char **arg)
 		sign;
 	    }
 	  
-	  if(rank==0)
+	  if(rankId==0)
 	    {
 	      const auto now=
 		takeTime();
@@ -336,7 +340,7 @@ int main(int narg,char **arg)
       /// Reduce the colFact
       colFact=allReduceMap(colFact);
       
-      if(rank==0)
+      if(rankId==0)
 	{
 	  for(auto cf : colFact)
 	    printf("%+ld*n^(%ld) ",cf.second,cf.first);
