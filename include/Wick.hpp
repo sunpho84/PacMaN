@@ -131,7 +131,7 @@ public:
   int64_t nAllWickContrs(const bool verbose=true)
   {
     if(verbose)
-      cout<<" nLegsPermAllPoints "<<nLegsPermAllPoints<<" , nPermAllAss: "<<nPermAllAss<<endl;
+      COUT<<" nLegsPermAllPoints "<<nLegsPermAllPoints<<" , nPermAllAss: "<<nPermAllAss<<endl;
     
     return
       nLegsPermAllPoints/nPermAllAss;
