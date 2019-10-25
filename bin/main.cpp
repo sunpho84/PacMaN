@@ -203,7 +203,7 @@ int main(int narg,char **arg)
 	pointsTraces.emplace_back();
     }
   
-  cout<<"Parsed Trace: "<<pointsTraces<<endl;
+  COUT<<"Parsed Trace: "<<pointsTraces<<endl;
   
   Wick<S> traceStructure=
     makeWickOfPartitions(pointsTraces);
