@@ -352,13 +352,22 @@ int main(int narg,char **arg)
 	      const double timePerWick=
 		elapsed/nWicksDoneInThisAss;
 	      
+	      double timeToEnd=
+		nWicksResidueTot*timePerWick;
+	      
+	      
+	      int iQ=0;
+	      vector<pair<int,char>> Q{{60,'s'},{60,'m'},{24,'h'},{30,'d'},{12,'M'},{1,'y'}};
+	      while(timeToEnd>10 and iQ<(int)Q.size()-1)
+		timeToEnd/=Q[iQ++].first;
+	      
 	      COUT<<
 		"NWick done: "<<nWicksDoneInThisAss<<"/"<<nWicksOfThisAss<<", "
 		"elapsed time: "<<int(elapsed)<<" s , "
 		"expected for this ass: "<<nWicksOfThisAss*timePerWick<<" s , "
 		"time to end of this ass: "<<nWicksResidueOfThisAss*timePerWick<<" s, "
 		"in total: "<<nWicksTot*timePerWick<<" s , "
-		"time to end: "<<nWicksResidueTot*timePerWick<<" s"<<endl;
+		"time to end: "<<timeToEnd<<" "<<Q[iQ].second<<endl;
 	    }
 	}
       MPI_Barrier(MPI_COMM_WORLD);
