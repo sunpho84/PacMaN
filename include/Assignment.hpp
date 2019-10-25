@@ -28,33 +28,35 @@ inline ostream& indent(ostream& os,int i)
 /// It stores the upper triangular part of the N X N symmetric matrix,
 /// in which each (i,j) entry represents the number of lines going
 /// from point i to point j
+template <typename S>
 using Assignment=
-  vector<int>;
+  vector<S>;
 
 /// Labels the two components of a pair
 enum{FROM,TO};
 
 /// Non null assignment
+template <typename S>
 class NnAss
 {
 public:
   
   /// Index of the points where the assignment start and ends
-  const array<int,2> iPoint;
+  const array<S,2> iPoint;
   
   /// Index of the assignment
   const int iAss;
   
   /// Number of lines
-  const int nLines;
+  const S nLines;
   
   /// Number of legs free to assign in start and end
-  const array<int,2> nFreeLegsWhenAssigning;
+  const array<S,2> nFreeLegsWhenAssigning;
   
   /// Number of possible assignments of the source and sink of the line
   const array<int64_t,2> nPoss;
   
-  NnAss(const array<int,2>& iPoint,const int& iAss,const int& nLines,const array<int,2>& nFreeLegsWhenAssigning) :
+  NnAss(const array<S,2>& iPoint,const int& iAss,const S& nLines,const array<S,2>& nFreeLegsWhenAssigning) :
     iPoint(iPoint),iAss(iAss),nLines(nLines),nFreeLegsWhenAssigning(nFreeLegsWhenAssigning),
     nPoss({nCombinations(nLines,nFreeLegsWhenAssigning[FROM]),nDispositions(nLines,nFreeLegsWhenAssigning[TO])})
   {
@@ -62,11 +64,9 @@ public:
   
 };
 
-/// Draws an Assignment
-void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint);
-
 /// Return the index of row, col in the upper triangular part of a marix of size n
-inline int triId(const int row,const int col,const int n)
+template <typename S>
+inline int triId(const S& row,const S& col,const S& n)
 {
   return n*row-(row+1)*row/2+col-(row+1);
 }
@@ -74,13 +74,14 @@ inline int triId(const int row,const int col,const int n)
 /// Assignment of the lines
 ///
 /// Creates all assignments between points
+template <typename S>
 class AssignmentsFinder
 {
   /// N-point function
-  vector<int> N;
+  vector<S> N;
   
   /// Size of N
-  const int nN=
+  const S nN=
     N.size();
   
   /// Number of assignment to be done
@@ -92,10 +93,10 @@ class AssignmentsFinder
   
 public:
   
-  AssignmentsFinder(const vector<int>& N) : N(N) {}
+  AssignmentsFinder(const vector<S>& N) : N(N) {}
   
   /// Iteratively loop on all (row,col) lines, producing all possible assignments
-  void getAllAssignments(vector<Assignment>& allAss,Assignment& ass,int row=0,int col=1)
+  void getAllAssignments(vector<Assignment<S>>& allAss,Assignment<S>& ass,S row=0,S col=1)
   {
     /// Gets the index of the assignment line
     const int i=
@@ -105,22 +106,22 @@ public:
     if(i<nD)
       {
 	/// N to be assigned in the starting point
-	const int toBeAssFrom=
+	const S toBeAssFrom=
 	  N[row];
 	
 	/// N to be assigned in the ending point
-	const int toBeAssTo=
+	const S toBeAssTo=
 	  N[col];
 	
 	/// Number of points in row which would remain unassigned even
 	/// if we assigned to it all other points (excluded col)
-	const int unassignedInRow=
+	const S unassignedInRow=
 	  accumulate(N.begin()+col+1,N.end(),toBeAssFrom,minus<int>());
 	
 	/// Number of points in col which would remain unassigned even
 	/// if we assigned to it all other points (excluded row)
-	const int unassignedInCol=
-	  accumulate(N.begin()+row+1,N.end(),2*toBeAssTo,minus<int>());
+	const S unassignedInCol=
+	  accumulate(N.begin()+row+1,N.end(),2*toBeAssTo,minus<S>());
 	
 	/// Minimal value to assign to this (row,col) line
 	///
@@ -129,8 +130,8 @@ public:
 	/// that can be assigned to all points following col. If this
 	/// number is negative, we have no lower limit on the number
 	/// of lines to be assigned.
-	const int minAss=
-	  max(0,
+	const S minAss=
+	  max((S)0,
 	      max(unassignedInCol,
 		  unassignedInRow));
 	
@@ -138,7 +139,7 @@ public:
 	///
 	/// This is the minimum between the number of free points at
 	/// start, and end of the line
-	const int maxAss=
+	const S maxAss=
 	  min(toBeAssFrom,toBeAssTo);
 	
 	// indent(cout,i)<<"(";
@@ -153,10 +154,12 @@ public:
 	// cout<<"), Row: "<<row<<", toBeAss(from,to)): ("<<toBeAssFrom<<","<<toBeAssTo<<"), Col: "<<col<<", iD: "<<i<<", minAss: "<<minAss<<", maxAss: "<<maxAss<<endl;
 	
 	// Increment the column
-	int nextCol=(col==nN-1)?(row+2):(col+1);
+	S nextCol=
+	  (col==nN-1)?(row+2):(col+1);
 	
 	/// Increment the row
-	int nextRow=(col==nN-1)?(row+1):row;
+	S nextRow=
+	  (col==nN-1)?(row+1):row;
 	
 	// Loop on all assignment to this element
 	for(int a=minAss;a<=maxAss;a++)
@@ -181,7 +184,8 @@ public:
       }
     else
       {
-	const bool acceptable=N.back()==0;
+	const bool acceptable=
+	  N.back()==0;
 	
 	if(acceptable)
 	  {
@@ -205,13 +209,13 @@ public:
   }
   
   /// Gets all assignments
-  vector<vector<int>> getAllAssignements()
+  vector<vector<S>> getAllAssignements()
   {
     /// List of all assignments
-    vector<Assignment> allAss;
+    vector<Assignment<S>> allAss;
     
     /// List of all assignments
-    Assignment ass(nD);
+    Assignment<S> ass(nD);
     
     getAllAssignments(allAss,ass);
     
@@ -220,6 +224,55 @@ public:
   }
 };
 
-void drawAllAssignments(ostream& os,const vector<Assignment>& all,const vector<int>& nPoint);
+template <typename S>
+void drawAllAssignments(ostream& os,const vector<Assignment<S>>& all,const vector<S>& nPoint)
+{
+  /// Gets back N
+  const S N=
+    nPoint.size();
+  
+  // Header
+  os<<"\\documentclass{standalone}"<<endl;
+  os<<"\\usepackage{morewrites}"<<endl;
+  os<<"\\usepackage[pdf]{graphviz}"<<endl;
+  os<<endl;
+  os<<"\\begin{document}"<<endl;
+  os<<endl;
+  
+  for(int iG=0;iG<(int)all.size();iG++)
+    {
+      /// Assignment
+      auto &a=
+	all[iG];
+      
+      auto node=
+	[iG](S i)
+	{
+	  return "N_"+to_string(iG)+"_"+to_string(i);
+	};
+      
+      os<<"\\neatograph{G"<<iG<<"}{ "<<endl;
+      
+      // Draws the labels
+      for(S iNode=0;iNode<N;iNode++)
+	os<<node(iNode)<<" ["
+	  <<" label=\""<<(char)('a'+iNode)<<"\""// nPoint[iNode]<<"\""
+	  <<" pos=\""<<cos(M_PI*(2*iNode+1)/N)<<","<<sin(M_PI*(2*iNode+1)/N)<<"!\""
+	  <<" shape=\"circle\""
+	  <<"];"<<endl;
+      
+      // Loop on all assignments
+      int i=0;
+      for(S row=0;row<N;row++)
+	for(S col=row+1;col<N;col++)
+	  for(S h=a[i++];h>0;h--)
+	    os<<node(row)<<" -- "<<node(col)<<" [arrowhead=none]"<<endl;
+      
+      // Trailer
+      os<<"}"<<endl;
+    }
+  
+  os<<"\\end{document}"<<endl;
+}
 
 #endif

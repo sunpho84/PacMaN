@@ -22,9 +22,13 @@ int nRanks;
 /// Rank id
 int rankId;
 
+using S=
+  int;
+
 /// Get iBit bit of i
-template <typename I>
-bool getBit(const I& i,const int& iBit)
+template <typename I,
+	  typename S>
+bool getBit(const I& i,const S& iBit)
 {
   return
     (i>>iBit)&1;
@@ -42,14 +46,14 @@ void summassign(map<int,int>& first,const map<int,int> &second)
   COUT<<"}"<<endl;
 }
 
-inline int countNClosedLoops(vector<int> g)
+inline S countNClosedLoops(vector<S> g)
 {
   /// Number of closed loops found
-  int nClosedLoops=
+  S nClosedLoops=
     0;
   
   /// Current position
-  int i=
+  S i=
     0;
   
   while(i<(int)g.size())
@@ -57,7 +61,7 @@ inline int countNClosedLoops(vector<int> g)
       i++;
     else
       {
-	int next=g[i];
+	S next=g[i];
 	// COUT<<i<<endl;
 	g[i]=-1;
 	i=next;
@@ -71,20 +75,21 @@ inline int countNClosedLoops(vector<int> g)
 }
 
 /// Transform the points partition into a list of Wick contractions
-Wick makeWickOfPartitions(const vector<Partition>& pointsPart)
+template <typename S>
+Wick<S> makeWickOfPartitions(const vector<Partition<S>>& pointsPart)
 {
   /// Result
-  Wick out;
+  Wick<S> out;
   
   /// Running leg
-  int iLeg=
+  S iLeg=
     0;
   
   for(auto& pointPart : pointsPart)
     for(auto& part : pointPart)
       {
-	for(int i=0;i<part;i++)
-	  out.push_back({iLeg+i,iLeg+(i+1)%part});
+	for(S i=0;i<part;i++)
+	  out.push_back({(S)(iLeg+i),(S)(iLeg+(i+1)%part)});
 	iLeg+=part;
       }
   
@@ -92,7 +97,8 @@ Wick makeWickOfPartitions(const vector<Partition>& pointsPart)
 }
 
 /// Returns the string representing the trace part
-string traceDot(const vector<Partition>& pointsTraces)
+template <typename S>
+string traceDot(const vector<Partition<S>>& pointsTraces)
 {
   ostringstream traceNodes;
   
@@ -104,7 +110,7 @@ string traceDot(const vector<Partition>& pointsTraces)
       traceNodes<<"subgraph cluster_"<<iPT++<<"{"<<endl;
       for(auto p : pointTrace)
 	{
-	  for(int i=0;i<p;i++)
+	  for(S i=0;i<p;i++)
 	    traceNodes<<"\t_"<<u+2*i+1<<" -> _"<<u+2*((i+1)%p)<<endl;
 	  u+=2*p;
 	}
@@ -116,7 +122,8 @@ string traceDot(const vector<Partition>& pointsTraces)
     traceNodes.str();
 }
 
-auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int>& totPermSingleContr)
+template <typename S>
+auto getColFact(const S& nLines,const Wick<S>& wick,const int64_t& iCD,vector<S>& totPermSingleContr)
 {
   // COUT<<" Writing conn disco "<<iCD<<" = ";
   // for(int iLine=0;iLine<nLines;iLine++)
@@ -126,13 +133,13 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
   // COUT<<traceNodes.str()<<endl;
   
   // Count the number of disconnected
-  int nDiscoTraces=
+  S nDiscoTraces=
     0;
   
-  for(int iLine=0;iLine<nLines;iLine++)
+  for(S iLine=0;iLine<nLines;iLine++)
     {
       /// Line to consider
-      const Line& w=
+      const Line<S>& w=
 	wick[iLine];
       
       /// Determine whether the iLine bit is 0 (conn) or 1 (disco)
@@ -143,26 +150,26 @@ auto getColFact(const int& nLines,const Wick& wick,const int64_t& iCD,vector<int
       nDiscoTraces+=CD;
       
       /// We swap in1 and in0 if CD is 1
-      const int ou0=w[FROM]*2;
-      const int ou1=w[TO]*2;
-      const int in0=w[FROM^CD]*2+1;
-      const int in1=w[TO^CD]*2+1;
+      const S ou0=w[FROM]*2;
+      const S ou1=w[TO]*2;
+      const S in0=w[FROM^CD]*2+1;
+      const S in1=w[TO^CD]*2+1;
       
       totPermSingleContr[ou0]=in1;
       totPermSingleContr[ou1]=in0;
     }
   
   /// Determine the number of closed loops, which counts ncol^nloops
-  const int nClosedLoops=
+  const S nClosedLoops=
     countNClosedLoops(totPermSingleContr);
   
   const bool parity=
     nDiscoTraces%2;
   
-  const int sign=
+  const S sign=
     1-parity*2;
   
-  const int nPow=
+  const S nPow=
     nClosedLoops-nDiscoTraces;
   
   return
@@ -181,19 +188,31 @@ int main(int narg,char **arg)
     takeTime();
   
   /// Partition of all points, representing a multitrace
-  vector<Partition> pointsTraces=
-  {{2},{2},{4},{2,2}};
-    // {{6},{6},{6}};
-    // {{3},{3},{6},{6}};
+  vector<Partition<S>> pointsTraces(1);
   
-  Wick traceStructure=
+  for(int iArg=1;iArg<narg;iArg++)
+    {
+      int t;
+      
+      int rc=
+	sscanf(arg[iArg],"%d",&t);
+      
+      if(rc==1)
+	pointsTraces.back().push_back(t);
+      else
+	pointsTraces.emplace_back();
+    }
+  
+  cout<<"Parsed Trace: "<<pointsTraces<<endl;
+  
+  Wick<S> traceStructure=
     makeWickOfPartitions(pointsTraces);
   
   // for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
   //   COUT<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
-  vector<int> nPoints;
+  vector<S> nPoints;
   for(auto p : pointsTraces)
     nPoints.emplace_back(accumulate(p.begin(),p.end(),0));
   
@@ -202,22 +221,22 @@ int main(int narg,char **arg)
     COUT<<y<<endl;
   
   /// Number of all points
-  const int nTotPoints=
+  const S nTotPoints=
     accumulate(nPoints.begin(),nPoints.end(),0);
   
   /// Finder of all assignments
-  AssignmentsFinder assignmentsFinder(nPoints);
+  AssignmentsFinder<S> assignmentsFinder(nPoints);
   
   /// All assignments
-  vector<Assignment> allAss=
+  vector<Assignment<S>> allAss=
     assignmentsFinder.getAllAssignements();
   
   /// Draw all assignments
-  ofstream assignmentTex("assignments.tex");
-  drawAllAssignments(assignmentTex,allAss,nPoints);
+  // ofstream assignmentTex("assignments.tex");
+  // drawAllAssignments(assignmentTex,allAss,nPoints);
   
   /// Total number of blob-connecting lines
-  const int nLines=
+  const S nLines=
     nTotPoints/2;
   COUT<<nLines<<endl;
   
@@ -243,9 +262,6 @@ int main(int narg,char **arg)
   const int timeBetweenPrints=
     10;
   
-  int nSecToNextOutput=
-    timeBetweenPrints;
-  
   int64_t nWicksDonePastAss=
     0;
   
@@ -255,6 +271,9 @@ int main(int narg,char **arg)
       const auto assStart=
 	takeTime();
       
+      int nSecToNextOutput=
+	timeBetweenPrints;
+      
       COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
       COUT<<ass<<endl;
       
@@ -262,7 +281,7 @@ int main(int narg,char **arg)
       
       map<int64_t,int64_t> colFact;
       /// Lister of all Wick contractions
-      WicksFinder wicksFinder(nPoints,ass);
+      WicksFinder<S> wicksFinder(nPoints,ass);
       
       const int64_t nWicksOfThisAss=
 	wicksFinder.nAllWickContrs();
@@ -273,7 +292,7 @@ int main(int narg,char **arg)
       for(int iWick=wl.beg;iWick<wl.end;iWick++)
 	{
 	  /// Lister of all Wick contractions
-	  const Wick wick=
+	  const Wick<S> wick=
 	    wicksFinder.get(iWick);
 	  //  COUT<<endl;
 	  
@@ -282,13 +301,13 @@ int main(int narg,char **arg)
 	  //   COUT<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
 	  
 	  /// Total permutation representing trace + Wick contractions
-	  vector<int> totPermSingleContr(2*nTotPoints,-1);
+	  vector<S> totPermSingleContr(2*nTotPoints,-1);
 	  
 	  // Fill the trace part
 	  for(auto p : traceStructure)
 	    {
-	      const int in=p[0]*2+1;
-	      const int out=p[1]*2;
+	      const S in=p[0]*2+1;
+	      const S out=p[1]*2;
 	      totPermSingleContr[in]=out;
 	    }
 	  

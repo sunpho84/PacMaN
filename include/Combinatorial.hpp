@@ -7,10 +7,68 @@
 using namespace std;
 
 /// Partition of a number
-typedef vector<int> Partition;
+template <typename S>
+using Partition=
+  vector<S>;
 
 /// List all partitioning of the number m
-vector<Partition> listAllPartitioningOf(int m);
+template <typename S>
+vector<Partition<S>> listAllPartitioningOf(const S& m)
+{
+  /// List to be returned
+  vector<Partition<S>> out;
+  
+  /// Position
+  S k=
+    0;
+  
+  /// Current vector
+  vector<S> p(m,0);
+  p[0]=m;
+  
+  do
+    {
+      /// Whether to include or not current partition
+      bool add=
+	true;
+      
+      // Condition: no 1 must be present
+      for(auto i=p.begin();i!=p.begin()+k+1;i++)
+      	if(*i==1)
+      	  add=false;
+      
+      // Add or not
+      if(add)
+	out.emplace_back(p.begin(),p.begin()+k+1);
+      
+      /// Value to remove
+      S remVal=
+	0;
+      
+      // Collect
+      while(k>=0 and p[k]==1)
+	remVal+=p[k--];
+      
+      if(k>=0)
+	{
+	  // Distribute 1
+	  p[k]--;
+	  remVal++;
+	  
+	  // Distribute the others
+	  while(remVal>p[k])
+	    {
+	      p[k+1]=p[k];
+	      remVal-=p[k++];
+	    }
+	  
+	  p[++k]=remVal;
+	}
+    }
+  while(k>=0);
+  
+  return out;
+}
 
 /// Factorial
 template <typename T=int64_t>
@@ -62,17 +120,18 @@ T nPermutations(const int& n)
 }
 
 /// Takes the id disposition of nObj numbers into nSlots slots, and returns its assigned choice
-template <typename T>
-vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
+template <typename T,
+	  typename S>
+vector<S> decryptDisposition(const S& nObj,const int& nSlots,T iDisp)
 {
   /// Choice at each turn
-  vector<int> choice(nObj);
+  vector<S> choice(nObj);
   
   /// Mask to determine the digit in the permutation
-  int mask=
+  S mask=
     nSlots-nObj+1;
   
-  for(int iObj=nObj-1;iObj>=0;iObj--)
+  for(S iObj=nObj-1;iObj>=0;iObj--)
     {
       // Choice of the i-th object
       choice[iObj]=
@@ -84,8 +143,8 @@ vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
     }
   
   // Increment chosen one
-  for(int iObj=nObj-2;iObj>=0;iObj--)
-    for(int jObj=iObj+1;jObj<nObj;jObj++)
+  for(S iObj=nObj-2;iObj>=0;iObj--)
+    for(S jObj=iObj+1;jObj<nObj;jObj++)
       if(choice[jObj]>=choice[iObj])
 	choice[jObj]++;
   
@@ -93,24 +152,27 @@ vector<int> decryptDisposition(const int& nObj,const int& nSlots,T iDisp)
 }
 
 /// Takes the id disposition of n numbers into n slots,and returns its assigned choice
-template <typename T>
-vector<int> decryptPermutation(const int& n,const T& in)
+template <typename T,
+	  typename S>
+vector<S> decryptPermutation(const int& n,const T& in)
 {
   return
-    decryptDisposition(n,n,in);
+    decryptDisposition<T,S>(n,n,in);
 }
 
 /// Returns the number of dispositions (ordered choices) of nObj objects into nSlots slots
-template <typename T=int64_t>
-T nDispositions(const int& nObj,const int& nSlots)
+template <typename T=int64_t,
+	  typename S>
+T nDispositions(const S& nObj,const S& nSlots)
 {
   return
     factorialsRatio<T>(nSlots,nSlots-nObj);
 }
 
 /// Returns the first dispositions of nObj objects into nSlots slots
-template <typename T=int64_t>
-T firstDisposition(const int& nObj,const int& nSlots)
+template <typename T=int64_t,
+	  typename S>
+T firstDisposition(const S& nObj,const S& nSlots)
 {
   return
     0;
@@ -125,34 +187,37 @@ T nextDisposition(const T& x)
 }
 
 /// Returns the last dispositions of nObj objects into nSlots slots
-template <typename T=int64_t>
-T lastDisposition(const int& nObj,const int& nSlots)
+template <typename T=int64_t,
+	  typename S>
+T lastDisposition(const S& nObj,const S& nSlots)
 {
   return
-    nDispositions(nObj,nSlots)-1;
+    nDispositions<T,S>(nObj,nSlots)-1;
 }
 
 /// Returns the number of combinations (unordered choices) of nObj objects into nSlots slots
-template <typename T=int64_t>
-T nCombinations(const int& nObj,const int& nSlots)
+template <typename T=int64_t,
+	  typename S>
+T nCombinations(const S& nObj,const S& nSlots)
 {
   return
     newtonBinomial<T>(nSlots,nObj);
 }
 
 /// Takes the id combination of nObj numbers into nSlots slots, and returns its assigned choice
-template <typename T>
-vector<int> decryptCombination(const int& nObj,const int& nSlots,T iCombo)
+template <typename T,
+	  typename S>
+vector<S> decryptCombination(const S& nObj,const S& nSlots,T iCombo)
 {
   /// Result
-  vector<int> out(nObj);
+  vector<S> out(nObj);
   
   /// Index of object
-  int iObj=
+  S iObj=
     0;
   
   /// Index of the slot
-  int iSlot=
+  S iSlot=
     0;
   
   while(iObj<nObj and iSlot<nSlots)
@@ -191,16 +256,18 @@ T nextCombination(const T& extX)
 }
 
 /// First combination of nObj objects
-template <typename T=int64_t>
-T firstCombination(const int& nObj,const int& nSlots=0)
+template <typename T=int64_t,
+	  typename S>
+T firstCombination(const S& nObj,const S& nSlots=0)
 {
   return
     (static_cast<T>(1)<<nObj)-1;
 }
 
 /// Last combination of nObj objects into nSlots slots
-template <typename T=int64_t>
-T lastCombination(const int& nObj,const int& nSlots)
+template <typename T=int64_t,
+	  typename S>
+T lastCombination(const S& nObj,const S& nSlots)
 {
   return
     ((static_cast<T>(1)<<nSlots)-1)^
@@ -236,27 +303,28 @@ void forAllCombinations(const int& nObj,const int& nSlots,F f)
 /////////////////////////////////////////////////////////////////
 
 /// Represents a mixed basis number
+template <typename S>
 class Digits
 {
 public:
   
   /// Base of each digit
-  const vector<int> base;
+  const vector<S> base;
   
   /// Number of digits
-  int nDigits() const
+  S nDigits() const
   {
     return
       base.size();
   };
   
   /// Last digit
-  const int lastDigit;
+  const S lastDigit;
   
   /// Digits rerpresenting the number
-  vector<int> digits;
+  vector<S> digits;
     
-  Digits(const vector<int>& base) :
+  Digits(const vector<S>& base) :
     base(base),
     lastDigit(nDigits()-1),
     digits(nDigits())
@@ -267,7 +335,7 @@ public:
   template <typename T>
   void setTo(T t)
   {
-    for(int iDigit=nDigits()-1;iDigit>=0;iDigit--)
+    for(S iDigit=nDigits()-1;iDigit>=0;iDigit--)
       {
 	// Choice of the i-th digitect
 	digits[iDigit]=
@@ -286,7 +354,7 @@ public:
     setTo(0);
     
     /// Index of the running digit
-    int iDigit=
+    S iDigit=
       lastDigit;
     
     // Loops on all numbers

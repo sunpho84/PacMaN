@@ -8,31 +8,35 @@
 using namespace std;
 
 /// A line connects two points
-typedef array<int,2> Line;
+template <typename S>
+using Line=
+  array<S,2>;
 
 /// Wick contraction is a list of lines
-typedef vector<Line> Wick;
+template <typename S>
+using Wick=vector<Line<S>>;
 
 /// Creates all Wick contraction, given a n-point function and an assignment
+template <typename S>
 class WicksFinder
 {
   /// Number of legs in each point
-  const vector<int> nLegsPerPoint;
+  const vector<S> nLegsPerPoint;
   
   /// Number of points
-  const int nPoints;
+  const S nPoints;
   
   /// Total number of legs
-  const int nLegs;
+  const S nLegs;
   
   /// Total number of lines, equal to half the legs
-  const int nLines;
+  const S nLines;
   
   /// Point where the leg is attached
-  const vector<int> pointOfLeg;
+  const vector<S> pointOfLeg;
   
   /// Assignment to be considered
-  const Assignment ass;
+  const Assignment<S> ass;
   
   /// Number of permutations of the legs of each point
   const vector<int64_t> nLegsPermPerPoint;
@@ -45,14 +49,14 @@ class WicksFinder
   const int64_t nLegsPermAllPoints;
   
   /// Number of free legs in the head and in the tail when assigning the (i,j) assignment
-  const vector<array<int,2>> nFreeLegsWhenAssigning;
+  const vector<array<S,2>> nFreeLegsWhenAssigning;
   
   /// Product of the number of all permutations of all lines of the
   /// given propagator assignment
   const int64_t nPermAllAss;
   
   /// Number of legs before the given point
-  const vector<int> nLegsBefPoint;
+  const vector<S> nLegsBefPoint;
   
   /// Compute the number of free legs on the head and tail of all
   /// assignment when assigning each of them in turn
@@ -63,27 +67,27 @@ class WicksFinder
   ///
   /// The number of free legs in the tail is given by
   /// nLegsPerPoint[col]-\sum_{k=0}^{row-1} ass[k,col]
-  vector<array<int,2>> getNFreeLegsWhenAssigning() const
+  vector<array<S,2>> getNFreeLegsWhenAssigning() const
   {
     /// Returned list
-    vector<array<int,2>> out(ass.size());
+    vector<array<S,2>> out(ass.size());
     
     /// Considered assignment
     int iAss=
       0;
     
-    for(int row=0;row<nPoints;row++)
-      for(int col=row+1;col<nPoints;col++)
+    for(S row=0;row<nPoints;row++)
+      for(S col=row+1;col<nPoints;col++)
 	{
 	  /// Number of free legs in head (row)
-	  int nFreeLegsInHead=
+	  S nFreeLegsInHead=
 	    nLegsPerPoint[row];
 	  
 	  /// Number of free legs in tail (col)
-	  int nFreeLegsInTail=
+	  S nFreeLegsInTail=
 	    nLegsPerPoint[col];
 	  
-	  for(int k=0;k<row;k++)
+	  for(S k=0;k<row;k++)
 	    {
 	      nFreeLegsInHead-=
 		ass[triId(k,row,nPoints)];
@@ -92,7 +96,7 @@ class WicksFinder
 		ass[triId(k,col,nPoints)];
 	    }
 	  
-	  for(int k=row+1;k<col;k++)
+	  for(S k=row+1;k<col;k++)
 	    nFreeLegsInHead-=
 	      ass[triId(row,k,nPoints)];
 	  
@@ -108,18 +112,18 @@ class WicksFinder
   }
   
   /// Precomputed list of all possible assignment
-  vector<vector<vector<int>>> possTable;
+  vector<vector<vector<S>>> possTable;
   
   /// Non-null associations
-  vector<NnAss> nnAss;
+  vector<NnAss<S>> nnAss;
   
   /// Looper on all possibilities
-  unique_ptr<Digits> possibilitiesLooper;
+  unique_ptr<Digits<S>> possibilitiesLooper;
   
 public:
   
   /// Return first Wick contraction
-  Wick getFirst()
+  Wick<S> getFirst()
   {
     possibilitiesLooper->setTo(0);
     
@@ -138,17 +142,17 @@ public:
   }
   
   /// Gets the list of non-null associations
-  vector<NnAss> getNonNullAssociations() const
+  vector<NnAss<S>> getNonNullAssociations() const
   {
     /// Result
-    vector<NnAss> res;
+    vector<NnAss<S>> res;
     
     /// Index of association
     int iAss=
       0;
     
-    for(int i=0;i<nPoints;i++)
-      for(int j=i+1;j<nPoints;j++)
+    for(S i=0;i<nPoints;i++)
+      for(S j=i+1;j<nPoints;j++)
 	{
 	  if(ass[iAss]!=0)
 	    res.push_back({{i,j},iAss,ass[iAss],nFreeLegsWhenAssigning[iAss]});
@@ -161,42 +165,42 @@ public:
   }
   
   /// Convert the digits of the Wick contraction id written in terms of digits into an actual Wick contraction
-  Wick convertDigitsToWick(const vector<int>& wickDigits)
+  Wick<S> convertDigitsToWick(const vector<S>& wickDigits)
     const
   {
     /// Store wether the leg is assigned
     vector<int> legIsAss(nLegs,false);
     
     /// Store the assignment of the legs, in form of lines connecting two legs
-    Wick lineAss(nLines);
+    Wick<S> lineAss(nLines);
     
     /// Index of the line to assign
-    int iLineToAss=
+    S iLineToAss=
       0;
     
     for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
       {
 	/// Number of legs for this assignment
-	const int nLegsPerAss=
+	const S nLegsPerAss=
 	  nnAss[iNnAss].nLines;
 	
 	/// Legs connected by the lines of this assignment
 	///
 	/// We need to temporarily store this, because in the table
 	/// of possibility they are counted as a whole block
-	vector<array<int,2>> pointsLegAss(nLegsPerAss);
+	vector<array<S,2>> pointsLegAss(nLegsPerAss);
 	
-	for(int iLine=0;iLine<nLegsPerAss;iLine++)
+	for(S iLine=0;iLine<nLegsPerAss;iLine++)
 	  for(int ft=0;ft<2;ft++)
 	    {
 	      // At first, set the leg to the number of legs preceeding
 	      // the point (which is the lable of the first leg of the point)
-	      int& l=
+	      S& l=
 		pointsLegAss[iLine][ft]=
 		nLegsBefPoint[nnAss[iNnAss].iPoint[ft]];
 	      
 	      // Then skip needed unassigned legs
-	      int count=
+	      S count=
 		possTable[2*iNnAss+ft][wickDigits[2*iNnAss+ft]][iLine];
 	      while(count>0 or legIsAss[l])
 		{
@@ -207,7 +211,7 @@ public:
 	    }
 	
 	// Now we mark all assigned
-	for(int iLegPerAss=0;iLegPerAss<nLegsPerAss;iLegPerAss++)
+	for(S iLegPerAss=0;iLegPerAss<nLegsPerAss;iLegPerAss++)
 	  {
 	    for(int ft=0;ft<2;ft++)
 	      {
@@ -231,10 +235,10 @@ public:
   void forAllWicks(F f)
     const
   {
-    possibilitiesLooper->forAllNumbers([&,this](const vector<int>& wickDigits)
+    possibilitiesLooper->forAllNumbers([&,this](const vector<S>& wickDigits)
 				       {
 					 /// Line assigments
-					 Wick lineAss=
+					 Wick<S> lineAss=
 					   convertDigitsToWick(wickDigits);
 					 
 					 f(lineAss);
@@ -242,7 +246,7 @@ public:
   }
   
   /// Get the Wick contraction numberiWick
-  Wick get(const int64_t& iWick)
+  Wick<S> get(const int64_t& iWick)
   {
     possibilitiesLooper->setTo(iWick);
     
@@ -276,7 +280,7 @@ public:
     for(int iNnAss=0;iNnAss<(int)nnAss.size();iNnAss++)
       {
 	/// Nonnull ass
-	const NnAss& a=
+	const NnAss<S>& a=
 	  nnAss[iNnAss];
 	
 	/// Index of the assignment
@@ -284,11 +288,11 @@ public:
 	  a.iAss;
 	
 	/// Number of legs to assign is equal to the number of lines of the assignment
-	const int& nLegsToAss=
+	const S& nLegsToAss=
 	  a.nLines;
 	
 	/// Number of free legs when assigning the head
-	const int& nFreeLegsFrom=
+	const S& nFreeLegsFrom=
 	  nFreeLegsWhenAssigning[iAss][FROM];
 	
 	/// Last possible assignment on the head
@@ -302,7 +306,7 @@ public:
 	  possTable[2*iNnAss+FROM].push_back(decryptCombination(nLegsToAss,nFreeLegsFrom,possFrom));
 	
 	/// Number of free legs when assigning the tail
-	const int& nFreeLegsTo=
+	const S& nFreeLegsTo=
 	  nFreeLegsWhenAssigning[iAss][TO];
 	
 	/// Last possible assignment on the tail
@@ -317,25 +321,26 @@ public:
       }
     
     possibilitiesLooper=
-      make_unique<Digits>(fillVector<int>(possTable.size(),[this](const int& i)
+      make_unique<Digits<S>>(fillVector<S>(possTable.size(),[this](const S& i)
 							   {
-							     return possTable[i].size();
+							     return
+							       possTable[i].size();
 							   }));
   }
   
-  WicksFinder(const vector<int>& nLegsPerPoint,const Assignment& ass) :
+  WicksFinder(const vector<S>& nLegsPerPoint,const Assignment<S>& ass) :
     nLegsPerPoint(nLegsPerPoint),
     nPoints(nLegsPerPoint.size()),
     nLegs(summatorial(nLegsPerPoint)),
     nLines(nLegs/2),
-    pointOfLeg(fillVector<int>(nLegs,[&](const int ileg)
+    pointOfLeg(fillVector<S>(nLegs,[&](const S ileg)
 			       {
 				 /// Index of the output point
-				 int iPoint=
+				 S iPoint=
 				   0;
 				 
 				 /// Sum of all legs of points [0,ipoint)
-				 int sumLegs=
+				 S sumLegs=
 				   0;
 				 
 				 while(ileg>=sumLegs+nLegsPerPoint[iPoint])
@@ -350,13 +355,13 @@ public:
     nLegsPermAllPoints(productorial(nLegsPermPerPoint)),
     nFreeLegsWhenAssigning(getNFreeLegsWhenAssigning()),
     nPermAllAss(productorial(nPermPerAss)),
-    nLegsBefPoint(fillVector<int>(nLegsPerPoint.size(),[&](const int iPoint)
+    nLegsBefPoint(fillVector<S>(nLegsPerPoint.size(),[&](const S& iPoint)
 				  {
 				    /// Result
-				    int res=
+				    S res=
 				      0;
 				    
-				    for(int jPoint=0;jPoint<iPoint;jPoint++)
+				    for(S jPoint=0;jPoint<iPoint;jPoint++)
 				      res+=nLegsPerPoint[jPoint];
 				    
 				    return
@@ -373,6 +378,30 @@ public:
 };
 
 /// Compute the number of all Wick contractions
-int64_t computeNTotWicks(const vector<Assignment>& allAss,const vector<int>& nPoints,const bool verbose=true);
+template <typename S>
+int64_t computeNTotWicks(const vector<Assignment<S>>& allAss,const vector<S>& nPoints,const bool verbose=true)
+{
+  /// Result returned
+  int64_t nTotWicks=
+    0;
+  
+  if(verbose)
+    COUT<<"List of all assignments: "<<endl;
+  
+  for(auto& ass : allAss)
+    {
+      const int64_t nWicks=
+	WicksFinder<S>(nPoints,ass).nAllWickContrs(false);
+      
+      if(verbose)
+	COUT<<" "<<ass<<" nWick: "<<nWicks<<endl;
+      
+      nTotWicks+=
+	nWicks;
+    }
+  
+  return
+    nTotWicks;
+}
 
 #endif
