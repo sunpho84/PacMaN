@@ -22,30 +22,59 @@ int nRanks;
 /// Rank id
 int rankId;
 
+/// Type used to represent the leg
 using S=
   int;
 
-/// Get iBit bit of i
-template <typename I,
-	  typename S>
-bool getBit(const I& i,const S& iBit)
+/// Partition of all points, representing a multitrace
+vector<Partition<S>> getTraceFromInput(int narg,char **arg)
 {
+  /// Result
+  vector<Partition<S>> pointsTraces(1);
+  
+  for(int iArg=1;iArg<narg;iArg++)
+    {
+      /// Temporary scan result
+      int t;
+      
+      /// Result of scanning
+      int rc=
+	sscanf(arg[iArg],"%d",&t);
+      
+      bool failed=
+	false;
+      
+      if(rc==1)
+	{
+	  pointsTraces.back().push_back(t);
+	  ostringstream os;
+	  os<<t;
+	  if(strcasecmp(os.str().c_str(),arg[iArg])!=0)
+	    failed=
+	      true;
+	}
+      else
+	if(strcasecmp(arg[iArg],",")==0)
+	  pointsTraces.emplace_back();
+	else
+	  failed=
+	    true;
+      
+      if(failed)
+	{
+	  if(rankId==0)
+	    cerr<<"Error! Invalid "<<iArg<<"-th argument "<<arg[iArg]<<", use e.g. "<<arg[0]<<" 2 , 3 , 3"<<endl;
+	  MPI_Abort(MPI_COMM_WORLD,0);
+	}
+    }
+  
+  COUT<<"Parsed Trace: "<<pointsTraces<<endl;
+  
   return
-    (i>>iBit)&1;
-}
-void summassign(map<int,int>& first,const map<int,int> &second)
-{
-  COUT<<"Adding to {";
-  for(auto& s : first) COUT<<"("<<s.first<<","<<s.second<<")";
-  COUT<<"} the list: {";
-  for(auto& s : second) COUT<<"("<<s.first<<","<<s.second<<")";
-  COUT<<"} making: {";
-  for(auto& s : second)
-    first[s.first]+=s.second;
-  for(auto& s : second) COUT<<"("<<s.first<<","<<s.second<<")";
-  COUT<<"}"<<endl;
+    pointsTraces;
 }
 
+/// Count the number of closed loops of the permutation g
 inline S countNClosedLoops(vector<S> g)
 {
   /// Number of closed loops found
@@ -122,16 +151,10 @@ string traceDot(const vector<Partition<S>>& pointsTraces)
     traceNodes.str();
 }
 
+/// Compute the color factor of this diagram and trace
 template <typename S>
-auto getColFact(const S& nLines,const Wick<S>& wick,const int64_t& iCD,vector<S>& totPermSingleContr)
+void getColFact(S& sign,S& nPow,const S& nLines,const Wick<S>& wick,const int64_t& iCD,vector<S>& totPermSingleContr)
 {
-  // COUT<<" Writing conn disco "<<iCD<<" = ";
-  // for(int iLine=0;iLine<nLines;iLine++)
-  //   COUT<<((iCD>>iLine)&1);
-  // COUT<<endl<<endl;
-  
-  // COUT<<traceNodes.str()<<endl;
-  
   // Count the number of disconnected
   S nDiscoTraces=
     0;
@@ -163,17 +186,15 @@ auto getColFact(const S& nLines,const Wick<S>& wick,const int64_t& iCD,vector<S>
   const S nClosedLoops=
     countNClosedLoops(totPermSingleContr);
   
+  /// Parity of nDiscoTraces
   const bool parity=
     nDiscoTraces%2;
   
-  const S sign=
+  sign=
     1-parity*2;
   
-  const S nPow=
+  nPow=
     nClosedLoops-nDiscoTraces;
-  
-  return
-    make_tuple(nPow,sign);
 }
 
 int main(int narg,char **arg)
@@ -184,41 +205,23 @@ int main(int narg,char **arg)
   
   MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
+  /// Initial time
   const auto absStart=
     takeTime();
   
   /// Partition of all points, representing a multitrace
-  vector<Partition<S>> pointsTraces(1);
+  vector<Partition<S>> pointsTraces=
+    getTraceFromInput(narg,arg);
+  COUT<<"Computing Trace: "<<pointsTraces<<endl;
   
-  for(int iArg=1;iArg<narg;iArg++)
-    {
-      int t;
-      
-      int rc=
-	sscanf(arg[iArg],"%d",&t);
-      
-      if(rc==1)
-	pointsTraces.back().push_back(t);
-      else
-	pointsTraces.emplace_back();
-    }
-  
-  COUT<<"Parsed Trace: "<<pointsTraces<<endl;
-  
+  /// Gets all Wick contractions
   Wick<S> traceStructure=
     makeWickOfPartitions(pointsTraces);
-  
-  // for(auto a : std::vector<std::pair<int,int>>{{4,0},{4,1},{4,2},{4,3},{4,4}})
-  //   COUT<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
   vector<S> nPoints;
   for(auto p : pointsTraces)
     nPoints.emplace_back(accumulate(p.begin(),p.end(),0));
-  
-  COUT<<"Possible partitions of 6 :"<<endl;
-  for(auto y : listAllPartitioningOf(6))
-    COUT<<y<<endl;
   
   /// Number of all points
   const S nTotPoints=
@@ -250,42 +253,44 @@ int main(int narg,char **arg)
     (1<<nLines);
   COUT<<"Number of traces options per Wick: "<<nCD<<endl;
   
+  /// Number of all color traces to be computed
   int64_t nTotColTraces=
     nWicksTot<<nLines;
   COUT<<"Total number of traces: "<<nTotColTraces<<endl;
   
-  // auto wc=
-  //   getColFact(nLines,WicksFinder(nPoints,allAss.front()).getFirst(),0,totPermSingleContr);
-  // COUT<<get<0>(wc)<<" "<<get<1>(wc)<<endl;
-  // return 0;
-  
+  /// Time between consecutive prints
   const int timeBetweenPrints=
     10;
   
+  /// Number of Wick contraction processed so far
   int64_t nWicksDonePastAss=
     0;
   
   // Loop on all propagator assignment
   for(auto& ass : allAss)
     {
+      /// Initial time
       const auto assStart=
 	takeTime();
       
+      /// Time before next output
       int nSecToNextOutput=
 	timeBetweenPrints;
       
       COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
       COUT<<ass<<endl;
       
-      // COUT<<"Wick contractions of assignment: "<<ass<< endl;
-      
+      /// Color factor computed
       map<int64_t,int64_t> colFact;
+      
       /// Lister of all Wick contractions
       WicksFinder<S> wicksFinder(nPoints,ass);
       
+      /// Number of Wick contraction of this assignment
       const int64_t nWicksOfThisAss=
 	wicksFinder.nAllWickContrs();
       
+      /// Workload for this rank
       const auto wl=
 	getWorkload(nWicksOfThisAss);
       
@@ -294,11 +299,6 @@ int main(int narg,char **arg)
 	  /// Lister of all Wick contractions
 	  const Wick<S> wick=
 	    wicksFinder.get(iWick);
-	  //  COUT<<endl;
-	  
-	  // COUT<<"Wick contraction "<<iWick<<endl;
-	  // for(auto& w : wick)
-	  //   COUT<<" Assigning leg "<<w[FROM]<<" to "<<w[TO]<<endl;
 	  
 	  /// Total permutation representing trace + Wick contractions
 	  vector<S> totPermSingleContr(2*nTotPoints,-1);
@@ -314,13 +314,13 @@ int main(int narg,char **arg)
 	  // Loop over whether we take connected or disconnected trace for each Wick
 	  for(int iCD=0;iCD<nCD;iCD++)
 	    {
-	      // auto _totPermSingleContr=
-	      //   totPermSingleContr;
+	      /// Power of the diagram
+	      int nPow;
 	      
-	      int nPow,sign;
+	      /// Sign of the diagram
+	      int sign;
 	      
-	      tie(nPow,sign)=
-		getColFact(nLines,wick,iCD,totPermSingleContr);
+	      getColFact(nPow,sign,nLines,wick,iCD,totPermSingleContr);
 	      
 	      colFact[nPow]+=
 		sign;

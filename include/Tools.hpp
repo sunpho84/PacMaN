@@ -210,15 +210,28 @@ double durationInSec(const Duration& duration) ///< Input duration
     std::chrono::duration<O>(duration).count();
 }
 
+/// Get iBit bit of i
+template <typename I,
+	  typename S>
+bool getBit(const I& i,const S& iBit)
+{
+  return
+    (i>>iBit)&1;
+}
+
+/// Class containing the workload of a loop
 template <typename T>
 class Workload
 {
 public:
   
+  /// Begin
   const T beg;
   
+  /// End
   const T end;
   
+  /// Compute the lenght including tail
   T len() const
   {
     return
@@ -226,15 +239,19 @@ public:
   }
 };
 
+/// Compute the workload of a loop
 template <typename T>
 Workload<T> getWorkload(const T& n)
 {
+  /// Load per rank
   const int64_t workLoad=
     (n+nRanks-1)/nRanks;
-      
+  
+  /// Beginning of the subloop
   const int64_t beg=
     workLoad*rankId;
-      
+  
+  /// End of the subloop
   const int64_t end=
     std::min(n,beg+workLoad);
   
@@ -242,13 +259,20 @@ Workload<T> getWorkload(const T& n)
     {beg,end};
 }
 
+/// MPI type of T
+///
+/// Forward definition
 template <typename T>
 class MPI_DatatypeFinder;
 
+/// MPI type of T
+///
+/// Specialization to int
 template <>
 class MPI_DatatypeFinder<int>
 {
 public:
+  /// Type to be used
   static MPI_Datatype type()
   {
     return
@@ -256,10 +280,14 @@ public:
   }
 };
 
+/// MPI type of T
+///
+/// Specialization to int64_t
 template <>
 class MPI_DatatypeFinder<int64_t>
 {
 public:
+  /// Type tp be used
   static MPI_Datatype type()
   {
     return
@@ -267,6 +295,7 @@ public:
   }
 };
 
+/// MPI type of T
 template <typename T>
 MPI_Datatype MPI_DataTypeOf()
 {
