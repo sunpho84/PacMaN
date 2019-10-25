@@ -193,11 +193,9 @@ int main(int narg,char **arg)
   //   COUT<<newtonBinomial(a.first,a.second)<<endl;
   
   /// Defines the N-Point function
-  const vector<int> nPoints=
-  {2,2,4,4};
-  // {6,6,6};
-    // {3,3,3,3};
-    //{2,2,2,2,4};
+  vector<int> nPoints;
+  for(auto p : pointsTraces)
+    nPoints.emplace_back(accumulate(p.begin(),p.end(),0));
   
   COUT<<"Possible partitions of 6 :"<<endl;
   for(auto y : listAllPartitioningOf(6))
@@ -224,9 +222,9 @@ int main(int narg,char **arg)
   COUT<<nLines<<endl;
   
   /// Compute the number of all Wick contractions
-  int64_t nTotWicks=
+  int64_t nWicksTot=
     computeNTotWicks(allAss,nPoints);
-  COUT<<"Total number of Wick contractions: "<<nTotWicks<<endl;
+  COUT<<"Total number of Wick contractions: "<<nWicksTot<<endl;
   
   /// Number of possible way to connect or disconnect
   const int64_t nCD=
@@ -234,7 +232,7 @@ int main(int narg,char **arg)
   COUT<<"Number of traces options per Wick: "<<nCD<<endl;
   
   int64_t nTotColTraces=
-    nTotWicks<<nLines;
+    nWicksTot<<nLines;
   COUT<<"Total number of traces: "<<nTotColTraces<<endl;
   
   // auto wc=
@@ -256,7 +254,7 @@ int main(int narg,char **arg)
     {
       const auto assStart=
 	takeTime();
-  
+      
       COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
       COUT<<ass<<endl;
       
@@ -266,11 +264,11 @@ int main(int narg,char **arg)
       /// Lister of all Wick contractions
       WicksFinder wicksFinder(nPoints,ass);
       
-      const int64_t nWicksPerAss=
+      const int64_t nWicksOfThisAss=
 	wicksFinder.nAllWickContrs();
       
       const auto wl=
-	getWorkload(nWicksPerAss);
+	getWorkload(nWicksOfThisAss);
       
       for(int iWick=wl.beg;iWick<wl.end;iWick++)
 	{
@@ -312,30 +310,36 @@ int main(int narg,char **arg)
 	  const auto now=
 	    takeTime();
 	  
-	  const int nSecFromStart=
+	  const double elapsed=
 	    durationInSec(now-assStart);
 	  
-	  if(nSecFromStart>nSecToNextOutput)
+	  if(elapsed>=nSecToNextOutput)
 	    {
 	      nSecToNextOutput+=
 		timeBetweenPrints;
 	      
-	      const double elapsed=
-		durationInSec(now-assStart);
-	      
-	      const int nWicksDoneInThisAss=
+	      const int64_t nWicksDoneInThisAss=
 		(iWick-wl.beg+1)*nRanks;
 	      
-	      const int nWicksDoneIncludingThisAss=
+	      const int64_t nWicksDoneIncludingThisAss=
 		nWicksDonePastAss+nWicksDoneInThisAss;
 	      
+	      const int64_t nWicksResidueOfThisAss=
+		nWicksOfThisAss-nWicksDoneInThisAss;
+	      
+	      const int64_t nWicksResidueTot=
+		nWicksTot-nWicksDoneIncludingThisAss;
+	      
+	      const double timePerWick=
+		elapsed/nWicksDoneInThisAss;
+	      
 	      COUT<<
-		"NWick done: "<<nWicksDoneInThisAss<<"/"<<nWicksPerAss<<", "
+		"NWick done: "<<nWicksDoneInThisAss<<"/"<<nWicksOfThisAss<<", "
 		"elapsed time: "<<int(elapsed)<<" s , "
-		"expected for this ass: "<<nWicksPerAss*elapsed/nWicksDoneInThisAss<<" s , "
-		"time to end of this ass: "<<(nTotWicks-nWicksDoneInThisAss)*elapsed/nWicksDoneInThisAss<<" s, "
-		"in total: "<<nTotWicks*elapsed/nWicksDoneIncludingThisAss<<" s , "
-		"time to end: "<<(nTotWicks-nWicksDoneIncludingThisAss)*elapsed/nWicksDoneIncludingThisAss<<" s"<<endl;
+		"expected for this ass: "<<nWicksOfThisAss*timePerWick<<" s , "
+		"time to end of this ass: "<<nWicksResidueOfThisAss*timePerWick<<" s, "
+		"in total: "<<nWicksTot*timePerWick<<" s , "
+		"time to end: "<<nWicksResidueTot*timePerWick<<" s"<<endl;
 	    }
 	}
       MPI_Barrier(MPI_COMM_WORLD);
@@ -385,7 +389,7 @@ int main(int narg,char **arg)
   //   }
   
   // out_perm<<"}"<<endl;
-
+  
   MPI_Barrier(MPI_COMM_WORLD);
   COUT<<"Total time needed: "<<durationInSec(takeTime()-absStart)<<" s"<<endl;
   
