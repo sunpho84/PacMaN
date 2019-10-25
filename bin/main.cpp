@@ -206,6 +206,8 @@ int main(int narg,char **arg)
   
   MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
+  COUT<<"NRanks: "<<nRanks<<endl;
+  
   /// Initial time
   const auto absStart=
     takeTime();
