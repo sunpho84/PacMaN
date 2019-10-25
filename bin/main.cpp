@@ -7,6 +7,7 @@
 #include "Tools.hpp"
 #include "Wick.hpp"
 
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <sstream>
