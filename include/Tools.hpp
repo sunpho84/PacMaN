@@ -1,12 +1,14 @@
 #ifndef _TOOLS_HPP
 #define _TOOLS_HPP
 
+#include <algorithm>
 #include <bitset>
 #include <chrono>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <fstream>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -208,6 +210,38 @@ double durationInSec(const Duration& duration) ///< Input duration
     std::chrono::duration<O>(duration).count();
 }
 
+template <typename T>
+class MPI_DatatypeFinder;
+
+template <>
+class MPI_DatatypeFinder<int>
+{
+public:
+  static MPI_Datatype type()
+  {
+    return
+      MPI_INT;
+  }
+};
+
+template <>
+class MPI_DatatypeFinder<int64_t>
+{
+public:
+  static MPI_Datatype type()
+  {
+    return
+      MPI_INT64_T;
+  }
+};
+
+template <typename T>
+MPI_Datatype MPI_DataTypeOf()
+{
+  return
+    MPI_DatatypeFinder<T>::type();
+};
+
 /// Reduce a map
 template <typename K,typename V>
 map<K,V> allReduceMap(const map<K,V>& in)
@@ -215,30 +249,41 @@ map<K,V> allReduceMap(const map<K,V>& in)
   /// Result
   map<K,V> out;
   
-  MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
+  /// Find minimal and maximal of the keys
+  const auto minmax=
+    minmax_element(in.begin(),in.end(),[](const auto& a,const auto& b){return a.first<b.first;});
   
-  for(int jRank=0;jRank<nRanks;jRank++)
-    {
-      /// Number of elements to send
-      int size=
-	in.size();
-      
-      MPI_Bcast(&size,1,MPI_INT,jRank,MPI_COMM_WORLD);
-      
-      auto it=
-	in.begin();
-      
-      for(int i=0;i<size;i++)
-	{
-	  /// Pair to send or receive
-	  pair<K,V> p;
-	  if(rankId==jRank)
-	    p=*(it++);
-	  
-	  MPI_Bcast(&p,sizeof(p),MPI_CHAR,jRank,MPI_COMM_WORLD);
-	  out[p.first]+=p.second;
-	}
-    }
+  /// Copy the minimal
+  K min=
+    minmax.first->first;
+  
+  /// Copy the maximal
+  K max=
+    minmax.second->first;
+  
+  MPI_Allreduce(MPI_IN_PLACE,&min,1,MPI_DataTypeOf<K>(),MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE,&max,1,MPI_DataTypeOf<K>(),MPI_MAX,MPI_COMM_WORLD);
+  
+  /// Total length of the map from min to max, including the end
+  const K len=
+    max-min+1;
+  
+  /// Representation of the map into a vector
+  vector<V> data(len,0);
+  
+  // Store into data
+  for(auto& i : in)
+    data[i.first-min]=
+      i.second;
+  
+  // Reduce
+  MPI_Allreduce(MPI_IN_PLACE,&data[0],len,MPI_DataTypeOf<V>(),MPI_SUM,MPI_COMM_WORLD);
+  
+  // Copy into output the non-null keys
+  for(K i=0;i<len;i++)
+    if(data[i])
+      out[i+min]=
+	data[i];
   
   return
     out;

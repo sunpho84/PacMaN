@@ -42,8 +42,6 @@ void summassign(map<int,int>& first,const map<int,int> &second)
   COUT<<"}"<<endl;
 }
 
-#pragma omp declare reduction(summassign:map<int,int>: summassign(omp_out,omp_in))
-
 inline int countNClosedLoops(vector<int> g)
 {
   /// Number of closed loops found
@@ -181,8 +179,8 @@ int main(int narg,char **arg)
   
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
-  //{{2},{2},{4},{2,2}};
-    {{6},{6},{6}};
+  {{2},{2},{4},{2,2}};
+    // {{6},{6},{6}};
     // {{3},{3},{6},{6}};
   
   Wick traceStructure=
@@ -193,8 +191,8 @@ int main(int narg,char **arg)
   
   /// Defines the N-Point function
   const vector<int> nPoints=
-  // {2,2,4,4};
-  {6,6,6};
+  {2,2,4,4};
+  // {6,6,6};
     // {3,3,3,3};
     //{2,2,2,2,4};
   
@@ -248,7 +246,7 @@ int main(int narg,char **arg)
     10;
   
   int nSecToNextOutput=
-    0;
+    timeBetweenPrints;
   
   // Loop on all propagator assignment
   for(auto& ass : allAss)
@@ -262,7 +260,8 @@ int main(int narg,char **arg)
       /// Lister of all Wick contractions
       WicksFinder wicksFinder(nPoints,ass);
       
-      const int64_t n=wicksFinder.nAllWickContrs();
+      const int64_t n=
+	wicksFinder.nAllWickContrs();
       
       const int64_t workLoad=
 	(n+nRanks-1)/nRanks;
@@ -310,31 +309,28 @@ int main(int narg,char **arg)
 		sign;
 	    }
 	  
-	  if(rankId==0)
+	  const auto now=
+	    takeTime();
+	  
+	  const int nSecFromStart=
+	    durationInSec(now-start);
+	  
+	  if(nSecFromStart>nSecToNextOutput)
 	    {
-	      const auto now=
-		takeTime();
+	      nSecToNextOutput+=
+		timeBetweenPrints;
 	      
-	      const int nSecFromStart=
+	      const double elapsed=
 		durationInSec(now-start);
 	      
-	      if(nSecFromStart>=nSecToNextOutput)
-		{
-		  nSecToNextOutput=
-		    nSecFromStart+timeBetweenPrints;
-		  
-		  const double elapsed=
-		    durationInSec(now-start);
-		  
-		  const int norm=
-		    (iWick+1)*nRanks;
-		  
-		  COUT<<
-		    "NWick done: "<<norm<<"/"<<nTotWicks<<", "
-		    "elapsed time: "<<elapsed<<" s , "
-		    "tot expected: "<<nTotWicks*elapsed/(norm)<<" s , "
-		    "time to end: "<<(nTotWicks-norm)*elapsed/(norm)<<" s"<<endl;
-		}
+	      const int norm=
+		(iWick-beg+1)*nRanks;
+	      
+	      COUT<<
+		"NWick done: "<<norm<<"/"<<nTotWicks<<", "
+		"elapsed time: "<<int(elapsed)<<" s , "
+		"tot expected: "<<nTotWicks*elapsed/norm<<" s , "
+		"time to end: "<<(nTotWicks-norm)*elapsed/norm<<" s"<<endl;
 	    }
 	}
       
@@ -343,7 +339,8 @@ int main(int narg,char **arg)
       COUT<<"Time needed before reduction: "<<durationInSec(takeTime()-start)<<" s"<<endl;
       
       /// Reduce the colFact
-      colFact=allReduceMap(colFact);
+      colFact=
+	allReduceMap(colFact);
       
       COUT<<"Time needed: "<<durationInSec(takeTime()-start)<<" s"<<endl;
       
