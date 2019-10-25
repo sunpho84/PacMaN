@@ -177,6 +177,9 @@ int main(int narg,char **arg)
   
   MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
+  const auto absStart=
+    takeTime();
+  
   /// Partition of all points, representing a multitrace
   vector<Partition> pointsTraces=
   {{2},{2},{4},{2,2}};
@@ -239,18 +242,21 @@ int main(int narg,char **arg)
   // COUT<<get<0>(wc)<<" "<<get<1>(wc)<<endl;
   // return 0;
   
-  const auto start=
-    takeTime();
-  
   const int timeBetweenPrints=
     10;
   
   int nSecToNextOutput=
     timeBetweenPrints;
   
+  int64_t nWicksDonePastAss=
+    0;
+  
   // Loop on all propagator assignment
   for(auto& ass : allAss)
     {
+      const auto assStart=
+	takeTime();
+  
       COUT<<"/////////////////////////////////////////////////////////////////"<<endl;
       COUT<<ass<<endl;
       
@@ -260,19 +266,13 @@ int main(int narg,char **arg)
       /// Lister of all Wick contractions
       WicksFinder wicksFinder(nPoints,ass);
       
-      const int64_t n=
+      const int64_t nWicksPerAss=
 	wicksFinder.nAllWickContrs();
       
-      const int64_t workLoad=
-	(n+nRanks-1)/nRanks;
+      const auto wl=
+	getWorkload(nWicksPerAss);
       
-      const int64_t beg=
-	workLoad*rankId;
-      
-      const int64_t end=
-	std::min(n,beg+workLoad);
-      
-      for(int iWick=beg;iWick<end;iWick++)
+      for(int iWick=wl.beg;iWick<wl.end;iWick++)
 	{
 	  /// Lister of all Wick contractions
 	  const Wick wick=
@@ -313,7 +313,7 @@ int main(int narg,char **arg)
 	    takeTime();
 	  
 	  const int nSecFromStart=
-	    durationInSec(now-start);
+	    durationInSec(now-assStart);
 	  
 	  if(nSecFromStart>nSecToNextOutput)
 	    {
@@ -321,28 +321,36 @@ int main(int narg,char **arg)
 		timeBetweenPrints;
 	      
 	      const double elapsed=
-		durationInSec(now-start);
+		durationInSec(now-assStart);
 	      
-	      const int norm=
-		(iWick-beg+1)*nRanks;
+	      const int nWicksDoneInThisAss=
+		(iWick-wl.beg+1)*nRanks;
+	      
+	      const int nWicksDoneIncludingThisAss=
+		nWicksDonePastAss+nWicksDoneInThisAss;
 	      
 	      COUT<<
-		"NWick done: "<<norm<<"/"<<nTotWicks<<", "
+		"NWick done: "<<nWicksDoneInThisAss<<"/"<<nWicksPerAss<<", "
 		"elapsed time: "<<int(elapsed)<<" s , "
-		"tot expected: "<<nTotWicks*elapsed/norm<<" s , "
-		"time to end: "<<(nTotWicks-norm)*elapsed/norm<<" s"<<endl;
+		"expected for this ass: "<<nWicksPerAss*elapsed/nWicksDoneInThisAss<<" s , "
+		"time to end of this ass: "<<(nTotWicks-nWicksDoneInThisAss)*elapsed/nWicksDoneInThisAss<<" s, "
+		"in total: "<<nTotWicks*elapsed/nWicksDoneIncludingThisAss<<" s , "
+		"time to end: "<<(nTotWicks-nWicksDoneIncludingThisAss)*elapsed/nWicksDoneIncludingThisAss<<" s"<<endl;
 	    }
 	}
+      MPI_Barrier(MPI_COMM_WORLD);
       
       // printf("%d done %ld Wick contr\n",omp_get_thread_num(),nDonePerThread);
       
-      COUT<<"Time needed before reduction: "<<durationInSec(takeTime()-start)<<" s"<<endl;
+      const auto befRed=
+	takeTime();
+      COUT<<"Time needed before reduction: "<<durationInSec(befRed-assStart)<<" s"<<endl;
       
       /// Reduce the colFact
       colFact=
 	allReduceMap(colFact);
       
-      COUT<<"Time needed: "<<durationInSec(takeTime()-start)<<" s"<<endl;
+      COUT<<"Time needed to redcue: "<<durationInSec(takeTime()-befRed)<<" s"<<endl;
       
       if(rankId==0)
 	{
@@ -377,6 +385,9 @@ int main(int narg,char **arg)
   //   }
   
   // out_perm<<"}"<<endl;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  COUT<<"Total time needed: "<<durationInSec(takeTime()-absStart)<<" s"<<endl;
   
   MPI_Finalize();
   

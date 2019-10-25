@@ -211,6 +211,38 @@ double durationInSec(const Duration& duration) ///< Input duration
 }
 
 template <typename T>
+class Workload
+{
+public:
+  
+  const T beg;
+  
+  const T end;
+  
+  T len() const
+  {
+    return
+      end-beg+1;
+  }
+};
+
+template <typename T>
+Workload<T> getWorkload(const T& n)
+{
+  const int64_t workLoad=
+    (n+nRanks-1)/nRanks;
+      
+  const int64_t beg=
+    workLoad*rankId;
+      
+  const int64_t end=
+    std::min(n,beg+workLoad);
+  
+  return
+    {beg,end};
+}
+
+template <typename T>
 class MPI_DatatypeFinder;
 
 template <>
