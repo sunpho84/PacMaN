@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include <mpi.h>
+#include <unistd.h>
 
 ofstream realCout("/dev/stdout");
 ofstream fakeCout("/dev/null");
@@ -26,6 +27,26 @@ int rankId;
 /// Type used to represent the leg
 using S=
   int;
+
+/// Implements the trap to debug mpi as from M.Mesiti
+void mpiTrap()
+{
+  volatile int flag = 0;
+  
+  if(atoi(getenv("GDBHOOK"))!=0)
+    {
+      printf("MPI%d: Thank you for using the GDB HOOK!\n",rankId);
+      printf("MPI%d: Waiting for user intervention.Please attach to process %d,\n",rankId,getpid());
+      printf("MPI%d: [hint: gdb -p %d ] \n",rankId,getpid());
+      printf("MPI%d: and set the value of 'flag' to 1.\n",rankId);
+      printf("MPI%d: You may have to use 'finish' a couple of times to go down the call stack.\n",rankId);
+      printf("MPI%d: HAPPY HUNTING AND GOOD LUCK!!!!\n",rankId);
+      
+      while(1 != flag)
+	sleep(1);
+    }
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 
 /// Partition of all points, representing a multitrace
 vector<Partition<S>> getTraceFromInput(int narg,char **arg)
@@ -206,6 +227,8 @@ int main(int narg,char **arg)
   
   MPI_Comm_rank(MPI_COMM_WORLD,&rankId);
   
+  mpiTrap();
+  
   COUT<<"NRanks: "<<nRanks<<endl;
   
   /// Initial time
@@ -297,7 +320,7 @@ int main(int narg,char **arg)
       const auto wl=
 	getWorkload(nWicksOfThisAss);
       
-      for(int iWick=wl.beg;iWick<wl.end;iWick++)
+      for(int64_t iWick=wl.beg;iWick<wl.end;iWick++)
 	{
 	  /// Lister of all Wick contractions
 	  const Wick<S> wick=
@@ -315,7 +338,7 @@ int main(int narg,char **arg)
 	    }
 	  
 	  // Loop over whether we take connected or disconnected trace for each Wick
-	  for(int iCD=0;iCD<nCD;iCD++)
+	  for(int64_t iCD=0;iCD<nCD;iCD++)
 	    {
 	      /// Power of the diagram
 	      int nPow;
@@ -385,14 +408,18 @@ int main(int narg,char **arg)
       colFact=
 	allReduceMap(colFact);
       
-      COUT<<"Time needed to redcue: "<<durationInSec(takeTime()-befRed)<<" s"<<endl;
+      COUT<<"Time needed to reduce: "<<durationInSec(takeTime()-befRed)<<" s"<<endl;
       
       if(rankId==0)
 	{
+	  printf("RESULT: ");
 	  for(auto cf : colFact)
 	    printf("%+ld*n^(%ld) ",cf.second,cf.first);
 	  printf("\n");
 	}
+      
+      nWicksDonePastAss+=
+	nWicksOfThisAss;
     }
   
   // for(int i=0;i<10;i++)
