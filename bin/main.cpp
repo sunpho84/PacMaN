@@ -347,7 +347,7 @@ int main(int narg,char **arg)
 	      /// Sign of the diagram
 	      int sign;
 	      
-	      getColFact(nPow,sign,nLines,wick,iCD,totPermSingleContr);
+	      getColFact(sign,nPow,nLines,wick,iCD,totPermSingleContr);
 	      
 	      colFact[nPow]+=
 		sign;
