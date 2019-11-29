@@ -33,7 +33,8 @@ void mpiTrap()
 {
   volatile int flag = 0;
   
-  if(atoi(getenv("GDBHOOK"))!=0)
+  char *env=getenv("GDBHOOK");
+  if(env!=NULL and atoi(env)!=0)
     {
       printf("MPI%d: Thank you for using the GDB HOOK!\n",rankId);
       printf("MPI%d: Waiting for user intervention.Please attach to process %d,\n",rankId,getpid());
